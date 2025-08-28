@@ -163,7 +163,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-32 px-6 lg:px-8 relative">
+      <section className="py-32 px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -173,294 +173,190 @@ export default function HomePage() {
             className="text-center mb-24"
           >
             <div className="section-label">How It Works</div>
-            <h2 className="section-title">
-              Your Event.<br />
-              <span className="gradient-text">Our Expertise.</span>
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-black leading-none mb-8">
+              4-Step Process to<br />
+              <span className="gradient-text">Your Perfect Event</span>
             </h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              A revolutionary approach to event management where we handle everything 
-              with precision, passion, and perfection.
+              Simple, transparent, and efficient - from vision to execution.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: (index: number) => (
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <motion.rect
-                      x="3"
-                      y="4"
-                      width="18"
-                      height="18"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 2, delay: index * 0.1 }}
-                    />
-                    <motion.line
-                      x1="16"
-                      y1="2"
-                      x2="16"
-                      y2="6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
-                    />
-                    <motion.line
-                      x1="8"
-                      y1="2"
-                      x2="8"
-                      y2="6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1, delay: index * 0.1 + 0.7 }}
-                    />
-                    <motion.circle
-                      cx="8"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1 }}
-                    />
-                    <motion.circle
-                      cx="12"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1.2 }}
-                    />
-                    <motion.circle
-                      cx="16"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1.4 }}
-                    />
-                  </svg>
-                ),
-                title: "Choose Your Event",
-                description: "Select from weddings, corporate events, birthdays, or custom celebrations.",
-                tags: ["Quick Setup", "AI Powered"]
-              },
-              {
-                icon: (index: number) => (
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <motion.path
-                      d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 2, delay: index * 0.1 }}
-                    />
-                    <motion.circle
-                      cx="12"
-                      cy="10"
-                      r="3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1.5, delay: index * 0.1 + 0.5 }}
-                    />
-                    <motion.circle
-                      cx="12"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1.5 }}
-                    />
-                  </svg>
-                ),
-                title: "Define Your Vision",
-                description: "Input your location, date, budget, and guest count for tailored recommendations.",
-                tags: ["Smart Match", "Instant Results"]
-              },
-              {
-                icon: (index: number) => (
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <motion.path
-                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 2, delay: index * 0.1 }}
-                    />
-                    <motion.path
-                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                      fill="currentColor"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 0.3 }}
-                      transition={{ duration: 1, delay: index * 0.1 + 1 }}
-                    />
-                  </svg>
-                ),
-                title: "Select Your Package",
-                description: "Choose from Basic, Professional, or Premium packages designed for your budget.",
-                tags: ["Transparent", "No Hidden Costs"]
-              },
-              {
-                icon: (index: number) => (
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <motion.path
-                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 2, delay: index * 0.1 }}
-                    />
-                    <motion.circle
-                      cx="8"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1 }}
-                    />
-                    <motion.circle
-                      cx="12"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1.2 }}
-                    />
-                    <motion.circle
-                      cx="16"
-                      cy="10"
-                      r="1"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1.4 }}
-                    />
-                  </svg>
-                ),
-                title: "Personal Consultation",
-                description: "Schedule a call with our EVEA experts to fine-tune every detail.",
-                tags: ["Expert Guidance", "Personalized"]
-              },
-              {
-                icon: (index: number) => (
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <motion.path
-                      d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1.5, delay: index * 0.1 }}
-                    />
-                    <motion.circle
-                      cx="9"
-                      cy="7"
-                      r="4"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1.5, delay: index * 0.1 + 0.5 }}
-                    />
-                    <motion.path
-                      d="M23 21v-2a4 4 0 0 0-3-3.87"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1, delay: index * 0.1 + 1 }}
-                    />
-                    <motion.path
-                      d="M16 3.13a4 4 0 0 1 0 7.75"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1, delay: index * 0.1 + 1.2 }}
-                    />
-                  </svg>
-                ),
-                title: "Team Deployment",
-                description: "10 dedicated EVEA professionals manage your entire event with precision.",
-                tags: ["10 Professionals", "End-to-End"]
-              },
-              {
-                icon: (index: number) => (
-                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <motion.path
-                      d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 2, delay: index * 0.1 }}
-                    />
-                    <motion.circle
-                      cx="12"
-                      cy="13"
-                      r="4"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1.5, delay: index * 0.1 + 0.8 }}
-                    />
-                    <motion.circle
-                      cx="12"
-                      cy="13"
-                      r="2"
-                      fill="currentColor"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 + 1.5 }}
-                    />
-                  </svg>
-                ),
-                title: "Create Memories",
-                description: "Premium packages include Instagram stories and YouTube highlights.",
-                tags: ["Social Ready", "Premium Feature"]
-              }
-            ].map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 card-hover"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mb-6">
-                  {step.icon(index)}
-                </div>
-                <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed">{step.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {step.tags.map((tag, tagIndex) => (
-                    <span key={tagIndex} className="px-3 py-1 bg-pink-500/10 border border-pink-500/20 rounded-full text-xs text-pink-400">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
+          <div className="relative">
+            {/* Vertical connecting line */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-gradient-to-b from-purple-500 to-pink-500 h-full hidden md:block"></div>
+            
+            <div className="space-y-16">
+              {[
+                {
+                  step: "01",
+                  icon: (index: number) => (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <motion.path
+                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 2, delay: index * 0.1 }}
+                      />
+                      <motion.path
+                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                        fill="currentColor"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.3 }}
+                        transition={{ duration: 1, delay: index * 0.1 + 1 }}
+                      />
+                    </svg>
+                  ),
+                  title: "Choose Your Vision",
+                  description: "Select your event type and share your vision with our AI-powered platform."
+                },
+                {
+                  step: "02",
+                  icon: (index: number) => (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <motion.path
+                        d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 2, delay: index * 0.1 }}
+                      />
+                      <motion.circle
+                        cx="12"
+                        cy="10"
+                        r="3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, delay: index * 0.1 + 0.5 }}
+                      />
+                      <motion.circle
+                        cx="12"
+                        cy="10"
+                        r="1"
+                        fill="currentColor"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 + 1.5 }}
+                      />
+                    </svg>
+                  ),
+                  title: "Select Services",
+                  description: "Browse our curated marketplace and choose from verified vendors and services."
+                },
+                {
+                  step: "03",
+                  icon: (index: number) => (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <motion.path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, delay: index * 0.1 }}
+                      />
+                      <motion.circle
+                        cx="9"
+                        cy="7"
+                        r="4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, delay: index * 0.1 + 0.5 }}
+                      />
+                      <motion.path
+                        d="M23 21v-2a4 4 0 0 0-3-3.87"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1, delay: index * 0.1 + 1 }}
+                      />
+                      <motion.path
+                        d="M16 3.13a4 4 0 0 1 0 7.75"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1, delay: index * 0.1 + 1.2 }}
+                      />
+                    </svg>
+                  ),
+                  title: "We Execute",
+                  description: "Our dedicated team takes over and manages every detail of your event."
+                },
+                {
+                  step: "04",
+                  icon: (index: number) => (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <motion.path
+                        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 2, delay: index * 0.1 }}
+                      />
+                      <motion.circle
+                        cx="12"
+                        cy="13"
+                        r="4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, delay: index * 0.1 + 0.8 }}
+                      />
+                      <motion.circle
+                        cx="12"
+                        cy="13"
+                        r="2"
+                        fill="currentColor"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 + 1.5 }}
+                      />
+                    </svg>
+                  ),
+                  title: "Share Your Story",
+                  description: "Capture and share your special moments with professional media and social integration."
+                }
+              ].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  viewport={{ once: true }}
+                  className={`flex items-center gap-12 ${
+                    index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                  } flex-col md:flex-row`}
+                >
+                  {/* Content */}
+                  <div className={`flex-1 ${index % 2 === 0 ? 'md:text-right' : 'md:text-left'} text-center md:text-left`}>
+                    <div className="text-6xl font-black text-white mb-4">{step.step}</div>
+                    <h3 className="text-3xl font-bold text-white mb-4">{step.title}</h3>
+                    <p className="text-gray-400 text-lg leading-relaxed">{step.description}</p>
+                  </div>
+
+                  {/* Icon */}
+                  <div className="flex-shrink-0">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white">
+                      {step.icon(index)}
+                    </div>
+                  </div>
+
+                  {/* Spacer for mobile */}
+                  <div className="flex-1 md:hidden"></div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

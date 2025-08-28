@@ -11,17 +11,39 @@ export async function GET() {
     const { data: events, error } = await supabase
       .from('events')
       .select('*')
-      .eq('is_active', true)
       .order('name');
 
     if (error) throw error;
 
+    // Transform events to match the frontend expectations
+    const transformedEvents = events?.map(event => ({
+      id: event.id,
+      name: event.name,
+      category: event.name.toLowerCase().replace(/\s+/g, '-'), // Convert name to category
+      description: event.description,
+      base_price: parseFloat(event.avg_budget.replace(/[^\d.]/g, '')), // Extract numeric value
+      min_guests: 50, // Default values
+      max_guests: 500,
+      is_active: true
+    })) || [];
+
+    console.log('✅ Successfully fetched events:', {
+      count: transformedEvents.length,
+      events: transformedEvents.map(e => ({ id: e.id, name: e.name, category: e.category })),
+      timestamp: new Date().toISOString()
+    });
+
     return NextResponse.json({ 
       success: true,
-      events 
+      events: transformedEvents
     });
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error('❌ Error fetching events:', error);
+    console.error('📊 Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
     return NextResponse.json(
       { 
         success: false,
