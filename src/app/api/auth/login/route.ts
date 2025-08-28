@@ -1,68 +1,70 @@
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-// Mock user database (replace with Supabase)
-const users = [
-  {
-    id: 1,
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    password: '$2a$10$hashedpassword', // This would be hashed
-    mobileNumber: '+919876543210',
-    location: 'Mumbai, Maharashtra'
-  }
-];
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+import { NextRequest, NextResponse } from 'next/server'
+import { authAPI } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password } = await request.json()
 
-    // Find user by email
-    const user = users.find(u => u.email === email);
-    if (!user) {
+    // Validate required fields
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+        { success: false, error: 'Email and password are required' },
+        { status: 400 }
+      )
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
+    console.log('Attempting to sign in user:', { email })
+
+    // Sign in user with Supabase Auth
+    const { data: authData, error: authError } = await authAPI.signIn(email, password)
+
+    if (authError) {
+      console.error('Supabase auth error:', authError)
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { success: false, error: 'Invalid email or password' },
         { status: 401 }
-      );
+      )
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        fullName: user.fullName 
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    if (!authData.user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication failed' },
+        { status: 401 }
+      )
+    }
 
-    // Return user data (without password) and token
-    const { password: _, ...userWithoutPassword } = user;
-    
+    console.log('User authenticated:', authData.user.id)
+
+    // Get user profile from users table
+    const { data: profileData, error: profileError } = await authAPI.getUser(authData.user.id)
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError)
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      )
+    }
+
+    console.log('User profile retrieved:', profileData)
+
     return NextResponse.json({
       success: true,
-      token,
-      user: userWithoutPassword
-    });
+      token: authData.session?.access_token,
+      user: {
+        id: profileData.id,
+        fullName: profileData.fullName,
+        email: profileData.email,
+        mobileNumber: profileData.mobileNumber,
+        location: profileData.location
+      }
+    })
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }

@@ -5,7 +5,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-// Mock user database (replace with Supabase)
+// TODO: Replace with Supabase integration
+// For now, using mock data - replace with actual Supabase queries
 let users = [
   {
     id: 1,

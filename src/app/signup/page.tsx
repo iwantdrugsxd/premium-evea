@@ -28,7 +28,7 @@ export default function SignupPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('/api/auth/passport-signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +43,8 @@ export default function SignupPage() {
         // Redirect to login page
         window.location.href = '/login';
       } else {
-        alert(data.error || 'Signup failed');
+        const errorMessage = data.error || 'Signup failed';
+        alert(`Signup failed: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -74,6 +75,10 @@ export default function SignupPage() {
             </Link>
             <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
             <p className="text-gray-400">Join EVEA to start planning your perfect event</p>
+            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-sm text-green-300 mb-2">Note:</p>
+              <p className="text-xs text-green-400">You can also use existing email: jane@example.com</p>
+            </div>
           </div>
 
           {/* Signup Form */}

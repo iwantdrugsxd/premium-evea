@@ -1,76 +1,82 @@
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-// Mock user database (replace with Supabase)
-let users = [
-  {
-    id: 1,
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    password: '$2a$10$hashedpassword',
-    mobileNumber: '+919876543210',
-    location: 'Mumbai, Maharashtra'
-  }
-];
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+import { NextRequest, NextResponse } from 'next/server'
+import { authAPI } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { fullName, mobileNumber, email, location, password } = await request.json();
+    const { fullName, mobileNumber, email, location, password } = await request.json()
 
-    // Check if user already exists
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
+    // Validate required fields
+    if (!fullName || !mobileNumber || !email || !location || !password) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { success: false, error: 'All fields are required' },
         { status: 400 }
-      );
+      )
     }
 
-    // Hash password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    console.log('Attempting to sign up user:', { email, fullName })
 
-    // Create new user
-    const newUser = {
-      id: users.length + 1,
+    // Sign up user with Supabase Auth
+    const { data: authData, error: authError } = await authAPI.signUp({
       fullName,
-      mobileNumber,
       email,
+      mobileNumber,
       location,
-      password: hashedPassword
-    };
+      password
+    })
 
-    // Add to database (in real app, this would be Supabase)
-    users.push(newUser);
+    if (authError) {
+      console.error('Supabase auth error:', authError)
+      return NextResponse.json(
+        { success: false, error: authError.message },
+        { status: 400 }
+      )
+    }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: newUser.id, 
-        email: newUser.email,
-        fullName: newUser.fullName 
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    if (!authData.user) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to create user' },
+        { status: 500 }
+      )
+    }
 
-    // Return user data (without password) and token
-    const { password: _, ...userWithoutPassword } = newUser;
-    
+    console.log('User created in Supabase Auth:', authData.user.id)
+
+    // Create user profile in users table
+    const { data: profileData, error: profileError } = await authAPI.createUserProfile({
+      fullName,
+      email,
+      mobileNumber,
+      location
+    })
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+      // Note: User is already created in auth, but profile creation failed
+      return NextResponse.json(
+        { success: false, error: 'Account created but profile setup failed' },
+        { status: 500 }
+      )
+    }
+
+    console.log('User profile created:', profileData)
+
     return NextResponse.json({
       success: true,
-      token,
-      user: userWithoutPassword
-    }, { status: 201 });
+      message: 'User created successfully',
+      user: {
+        id: profileData.id,
+        fullName: profileData.fullName,
+        email: profileData.email,
+        mobileNumber: profileData.mobileNumber,
+        location: profileData.location
+      }
+    })
 
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Signup error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }

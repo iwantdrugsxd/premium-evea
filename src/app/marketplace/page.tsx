@@ -1,26 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   Star, 
-  MapPin, 
-  Clock, 
   Users, 
-  Plus,
-  Filter,
   ShoppingCart,
   CheckCircle,
   Phone,
-  MessageCircle,
   ArrowRight,
-  ArrowLeft,
   X,
   Heart,
   Share2,
-  Calendar,
-  DollarSign,
   Shield,
   Award,
   Zap
@@ -29,19 +21,144 @@ import {
 export default function MarketplacePage() {
   const [activeFilter, setActiveFilter] = useState('All Vendors');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [selectedVendor, setSelectedVendor] = useState<{
+    id: number;
+    name: string;
+    category: string;
+    rating: number;
+    events: number;
+    price: string;
+    priceLabel: string;
+    responseTime: string;
+    badge: string;
+    image: string;
+    description: string;
+    features: string[];
+    location: string;
+    experience: string;
+    teamSize: string;
+    availability: string;
+    reviews: Array<{name: string; rating: number; comment: string}>;
+    portfolio: Array<{id: number; name: string; url: string}>;
+  } | null>(null);
   const [showVendorDetails, setShowVendorDetails] = useState(false);
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<Array<{
+    id: number;
+    name: string;
+    category: string;
+    price: string;
+    quantity: number;
+  }>>([]);
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showCallScheduler, setShowCallScheduler] = useState(false);
+  const [vendors, setVendors] = useState<Array<{
+    id: number;
+    name: string;
+    category: string;
+    rating: number;
+    events: number;
+    price: string;
+    priceLabel: string;
+    responseTime: string;
+    badge: string;
+    image: string;
+    description: string;
+    features: string[];
+    location: string;
+    experience: string;
+    teamSize: string;
+    availability: string;
+    reviews: Array<{name: string; rating: number; comment: string}>;
+    portfolio: Array<{id: number; name: string; url: string}>;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const filters = [
     'All Vendors', 'Catering', 'Photography', 'Decoration', 
     'Entertainment', 'Venues', 'Transportation', 'Florists'
   ];
 
-  const vendors = [
+  // Filter vendors based on active filter and search query
+  const filteredVendors = vendors.filter(vendor => {
+    const matchesFilter = activeFilter === 'All Vendors' || 
+      vendor.category.toLowerCase().includes(activeFilter.toLowerCase());
+    
+    const matchesSearch = searchQuery === '' || 
+      vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vendor.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vendor.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesFilter && matchesSearch;
+  });
+
+  // Fetch vendors from API
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/vendors');
+        const result = await response.json();
+        
+        if (result.success) {
+          // Transform the data to match the expected format
+          const transformedVendors = result.vendors.map((vendor: {
+            id: number;
+            name: string;
+            category: string;
+            rating?: number;
+            events_count?: number;
+            price?: string;
+            price_label?: string;
+            response_time?: string;
+            badge?: string;
+            image?: string;
+            description: string;
+            features?: string[];
+            location: string;
+            experience?: string;
+            team_size?: string;
+            availability?: string;
+            vendor_reviews?: Array<{name: string; rating: number; comment: string}>;
+            vendor_portfolio?: Array<{id: number; name: string; url: string}>;
+          }) => ({
+            id: vendor.id,
+            name: vendor.name,
+            category: vendor.category,
+            rating: vendor.rating || 0,
+            events: vendor.events_count || 0,
+            price: vendor.price || 'Contact for pricing',
+            priceLabel: vendor.price_label || 'Custom Quote',
+            responseTime: vendor.response_time || 'Within 24 hours',
+            badge: vendor.badge || 'New',
+            image: vendor.image || 'default',
+            description: vendor.description,
+            features: vendor.features || [],
+            location: vendor.location,
+            experience: vendor.experience || 'Not specified',
+            teamSize: vendor.team_size || '1-5 people',
+            availability: vendor.availability || 'Available',
+            reviews: vendor.vendor_reviews || [],
+            portfolio: vendor.vendor_portfolio || []
+          }));
+          setVendors(transformedVendors);
+        } else {
+          setError(result.error || 'Failed to fetch vendors');
+        }
+      } catch (err) {
+        console.error('Error fetching vendors:', err);
+        setError('Failed to load vendors');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []);
+
+  // Mock vendors for fallback
+  const mockVendors = [
     {
       id: 1,
       name: "Royal Feast Catering",
@@ -176,7 +293,12 @@ export default function MarketplacePage() {
     }
   ];
 
-  const addToCart = (vendor: any) => {
+  const addToCart = (vendor: {
+    id: number;
+    name: string;
+    category: string;
+    price: string;
+  }) => {
     if (!cart.find(item => item.id === vendor.id)) {
       setCart([...cart, { ...vendor, quantity: 1 }]);
     }
@@ -274,90 +396,155 @@ export default function MarketplacePage() {
       {/* Vendors Grid */}
       <section className="pb-32 px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {vendors.map((vendor, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="vendor-card"
+          {/* Loading State */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading vendors...</p>
+            </motion.div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-8 h-8 text-red-400" />
+              </div>
+              <p className="text-red-400 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-purple-500/20 border border-purple-500/30 rounded-xl text-purple-400 hover:bg-purple-500/30 transition-all"
               >
-                {/* Vendor Image */}
-                <div className="h-48 bg-gradient-to-br from-purple-500/20 to-pink-500/20 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
-                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-yellow-400 font-semibold">
-                    {vendor.badge}
+                Try Again
+              </button>
+            </motion.div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && vendors.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-16 h-16 bg-gray-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-400 mb-4">No vendors found</p>
+              <p className="text-sm text-gray-500">Check back later for new vendors</p>
+            </motion.div>
+          )}
+
+          {/* No Results State */}
+          {!loading && !error && vendors.length > 0 && filteredVendors.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-16 h-16 bg-gray-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-400 mb-4">No vendors match your search</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or search terms</p>
+            </motion.div>
+          )}
+
+          {/* Vendors Grid */}
+          {!loading && !error && vendors.length > 0 && (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredVendors.map((vendor, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="vendor-card"
+                >
+                  {/* Vendor Image */}
+                  <div className="h-48 bg-gradient-to-br from-purple-500/20 to-pink-500/20 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
+                    <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-yellow-400 font-semibold">
+                      {vendor.badge}
+                    </div>
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <button className="w-8 h-8 bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:text-pink-500 transition-colors">
+                        <Heart className="w-4 h-4" />
+                      </button>
+                      <button className="w-8 h-8 bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:text-purple-500 transition-colors">
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <button className="w-8 h-8 bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:text-pink-500 transition-colors">
-                      <Heart className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:text-purple-500 transition-colors">
-                      <Share2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Vendor Info */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2">{vendor.name}</h3>
-                  <p className="text-gray-400 text-sm mb-4">{vendor.category}</p>
                   
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`w-4 h-4 ${i < Math.floor(vendor.rating) ? 'fill-current' : ''}`} 
-                        />
-                      ))}
+                  {/* Vendor Info */}
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2">{vendor.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4">{vendor.category}</p>
+                    
+                    {/* Rating */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`w-4 h-4 ${i < Math.floor(vendor.rating) ? 'fill-current' : ''}`} 
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-400">
+                        {vendor.rating} ({vendor.events} events)
+                      </span>
                     </div>
-                    <span className="text-sm text-gray-400">
-                      {vendor.rating} ({vendor.events} events)
-                    </span>
+                    
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-4 py-4 border-t border-white/5 mb-6">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-purple-500">{vendor.price}</div>
+                        <div className="text-xs text-gray-400 uppercase tracking-wider">{vendor.priceLabel}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-purple-500">{vendor.events}+</div>
+                        <div className="text-xs text-gray-400 uppercase tracking-wider">Events</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-purple-500">{vendor.responseTime}</div>
+                        <div className="text-xs text-gray-400 uppercase tracking-wider">Response</div>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => {
+                          setSelectedVendor(vendor);
+                          setShowVendorDetails(true);
+                        }}
+                        className="vendor-btn"
+                      >
+                        View Details
+                      </button>
+                      <button 
+                        onClick={() => addToCart(vendor)}
+                        className="vendor-btn primary"
+                      >
+                        Add to Package
+                      </button>
+                    </div>
                   </div>
-                  
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 py-4 border-t border-white/5 mb-6">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-500">{vendor.price}</div>
-                      <div className="text-xs text-gray-400 uppercase tracking-wider">{vendor.priceLabel}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-500">{vendor.events}+</div>
-                      <div className="text-xs text-gray-400 uppercase tracking-wider">Events</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-500">{vendor.responseTime}</div>
-                      <div className="text-xs text-gray-400 uppercase tracking-wider">Response</div>
-                    </div>
-                  </div>
-                  
-                  {/* Actions */}
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => {
-                        setSelectedVendor(vendor);
-                        setShowVendorDetails(true);
-                      }}
-                      className="vendor-btn"
-                    >
-                      View Details
-                    </button>
-                    <button 
-                      onClick={() => addToCart(vendor)}
-                      className="vendor-btn primary"
-                    >
-                      Add to Package
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -449,7 +636,7 @@ export default function MarketplacePage() {
                 <div>
                   <h3 className="text-xl font-bold mb-4">Reviews</h3>
                   <div className="space-y-4">
-                    {selectedVendor.reviews.map((review: any, index: number) => (
+                    {selectedVendor.reviews.map((review: {name: string; rating: number; comment: string}, index: number) => (
                       <div key={index} className="bg-white/5 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="flex text-yellow-400">

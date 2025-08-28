@@ -1,598 +1,679 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { 
-  Heart, 
-  Building, 
-  Cake, 
-  Gift, 
-  Music, 
-  Sparkles,
-  MapPin,
-  Calendar,
-  Clock,
-  Users,
-  DollarSign,
-  ArrowRight,
-  CheckCircle,
-  Star,
-  Phone,
-  MessageCircle,
-  Shield,
-  Award,
-  Zap,
-  Crown,
-  Sparkles as SparklesIcon,
-  ArrowLeft,
-  Play,
-  Video,
-  Camera,
-  Instagram
-} from 'lucide-react';
+import { CheckCircle, ArrowRight, ArrowLeft, Calendar, MapPin, Users, DollarSign, Clock, Phone } from 'lucide-react';
+
+interface Event {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  base_price: number;
+  min_guests: number;
+  max_guests: number;
+}
+
+interface EventDetails {
+  location: string;
+  date_time: string;
+  budget: number;
+  guest_count: number;
+  additional_notes?: string;
+}
+
+interface Package {
+  id: number;
+  name: string;
+  event_type: string;
+  price_range_min: number;
+  price_range_max: number;
+  guest_range_min: number;
+  guest_range_max: number;
+  features: string[];
+}
+
+interface CallSchedule {
+  scheduled_time: string;
+  user_whatsapp: string;
+}
 
 export default function PlanEventPage() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
-  const [eventDetails, setEventDetails] = useState({
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [eventDetails, setEventDetails] = useState<EventDetails | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [eventRequestId, setEventRequestId] = useState<number | null>(null);
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch events on component mount
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/events');
+      const data = await response.json();
+      
+      if (data.success) {
+        setEvents(data.events);
+      } else {
+        setError('Failed to fetch events');
+      }
+    } catch (error) {
+      setError('Failed to fetch events');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEventSelect = (event: Event) => {
+    setSelectedEvent(event);
+    setStep(2);
+  };
+
+  const handleEventDetailsSubmit = async (details: EventDetails) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/event-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_id: selectedEvent!.id,
+          ...details
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setEventDetails(details);
+        setEventRequestId(data.event_request.id);
+        
+        // Fetch package recommendations
+        const packageResponse = await fetch('/api/packages/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_id: selectedEvent!.id,
+            budget: details.budget,
+            guest_count: details.guest_count
+          })
+        });
+
+        const packageData = await packageResponse.json();
+
+        if (packageData.success) {
+          setPackages(packageData.packages);
+          setStep(3);
+        } else {
+          setError('Failed to get package recommendations');
+        }
+      } else {
+        setError(data.error || 'Failed to submit event details');
+      }
+    } catch (error) {
+      setError('Failed to submit event details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePackageSelect = async (pkg: Package) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Update the event request with selected package
+      const response = await fetch('/api/event-requests/update-package', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_request_id: eventRequestId,
+          selected_package: pkg.name.toLowerCase()
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSelectedPackage(pkg);
+        setStep(4);
+      } else {
+        setError(data.error || 'Failed to select package');
+      }
+    } catch (error) {
+      setError('Failed to select package');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCallSchedule = async (schedule: CallSchedule) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/call-schedules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_request_id: eventRequestId,
+          ...schedule
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Show success message
+        alert('Call scheduled successfully! Admin will contact you soon.');
+        // Reset form or redirect
+        setStep(1);
+        setSelectedEvent(null);
+        setEventDetails(null);
+        setPackages([]);
+        setSelectedPackage(null);
+        setEventRequestId(null);
+      } else {
+        setError(data.error || 'Failed to schedule call');
+      }
+    } catch (error) {
+      setError('Failed to schedule call');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const goBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const steps = [
+    { number: 1, title: 'Choose Event', icon: Calendar },
+    { number: 2, title: 'Event Details', icon: MapPin },
+    { number: 3, title: 'Select Package', icon: DollarSign },
+    { number: 4, title: 'Schedule Call', icon: Phone }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Header */}
+      <div className="container mx-auto px-6 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            Plan Your Event
+          </h1>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            Let&apos;s create something extraordinary together. Follow these simple steps to plan your perfect event.
+          </p>
+        </motion.div>
+
+        {/* Progress Steps */}
+        <div className="flex justify-center mb-12">
+          <div className="flex space-x-4">
+            {steps.map((stepItem, index) => {
+              const Icon = stepItem.icon;
+              const isActive = step === stepItem.number;
+              const isCompleted = step > stepItem.number;
+              
+              return (
+                <motion.div
+                  key={stepItem.number}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`flex items-center space-x-2 ${
+                    isActive ? 'text-purple-400' : isCompleted ? 'text-green-400' : 'text-gray-400'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
+                    isActive ? 'border-purple-400 bg-purple-400/20' : 
+                    isCompleted ? 'border-green-400 bg-green-400/20' : 
+                    'border-gray-400 bg-gray-400/20'
+                  }`}>
+                    {isCompleted ? (
+                      <CheckCircle className="w-6 h-6" />
+                    ) : (
+                      <Icon className="w-5 h-5" />
+                    )}
+                  </div>
+                  <span className="hidden md:block font-medium">{stepItem.title}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-8 text-red-300 text-center"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        {/* Step Content */}
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <EventSelectionStep
+              key="step1"
+              events={events}
+              onEventSelect={handleEventSelect}
+              loading={loading}
+            />
+          )}
+
+          {step === 2 && selectedEvent && (
+            <EventDetailsStep
+              key="step2"
+              event={selectedEvent}
+              onDetailsSubmit={handleEventDetailsSubmit}
+              onBack={goBack}
+              loading={loading}
+            />
+          )}
+
+          {step === 3 && (
+            <PackageSelectionStep
+              key="step3"
+              packages={packages}
+              onPackageSelect={handlePackageSelect}
+              onBack={goBack}
+              loading={loading}
+            />
+          )}
+
+          {step === 4 && (
+            <CallSchedulingStep
+              key="step4"
+              onScheduleComplete={handleCallSchedule}
+              onBack={goBack}
+              loading={loading}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+// Step 1: Event Selection
+function EventSelectionStep({ events, onEventSelect, loading }: {
+  events: Event[];
+  onEventSelect: (event: Event) => void;
+  loading: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="max-w-6xl mx-auto"
+    >
+      <h2 className="text-3xl font-bold text-white mb-8 text-center">Choose Your Event Type</h2>
+      
+      {loading ? (
+        <div className="text-center text-gray-300">Loading events...</div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event) => (
+            <motion.div
+              key={event.id}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 cursor-pointer hover:bg-white/10 transition-all duration-300"
+              onClick={() => onEventSelect(event)}
+            >
+              <h3 className="text-xl font-bold text-white mb-3">{event.name}</h3>
+              <p className="text-gray-400 mb-4 line-clamp-3">{event.description}</p>
+              <div className="flex items-center justify-between">
+                <div className="text-purple-400 font-semibold">
+                  Starting from ₹{event.base_price.toLocaleString()}
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// Step 2: Event Details
+function EventDetailsStep({ event, onDetailsSubmit, onBack, loading }: {
+  event: Event;
+  onDetailsSubmit: (details: EventDetails) => void;
+  onBack: () => void;
+  loading: boolean;
+}) {
+  const [details, setDetails] = useState<EventDetails>({
     location: '',
-    date: '',
-    time: '',
-    guests: '',
-    budget: 500000,
-    description: ''
+    date_time: '',
+    budget: 0,
+    guest_count: 0
   });
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [showPackages, setShowPackages] = useState(false);
-  const [showCallScheduler, setShowCallScheduler] = useState(false);
 
-  const eventTypes = [
-    {
-      id: 'wedding',
-      icon: <Heart className="w-10 h-10" />,
-      name: 'Wedding',
-      description: 'Create your dream wedding with our comprehensive planning and execution.',
-      features: ['Full Planning', '500+ Vendors', 'Premium'],
-      avgBudget: '₹15L - ₹50L',
-      duration: '6-12 months',
-      teamSize: '10-15 people'
-    },
-    {
-      id: 'corporate',
-      icon: <Building className="w-10 h-10" />,
-      name: 'Corporate Event',
-      description: 'Professional events that leave lasting impressions on clients and employees.',
-      features: ['Tech Setup', 'Streaming', 'Catering'],
-      avgBudget: '₹5L - ₹25L',
-      duration: '2-6 months',
-      teamSize: '8-12 people'
-    },
-    {
-      id: 'birthday',
-      icon: <Cake className="w-10 h-10" />,
-      name: 'Birthday Party',
-      description: 'Celebrate milestones with unforgettable parties tailored to any age.',
-      features: ['Themes', 'Entertainment', 'Decor'],
-      avgBudget: '₹50K - ₹5L',
-      duration: '1-3 months',
-      teamSize: '5-8 people'
-    },
-    {
-      id: 'anniversary',
-      icon: <Gift className="w-10 h-10" />,
-      name: 'Anniversary',
-      description: 'Mark special milestones with elegant celebrations and romantic settings.',
-      features: ['Intimate', 'Romantic', 'Memorable'],
-      avgBudget: '₹2L - ₹10L',
-      duration: '2-4 months',
-      teamSize: '6-10 people'
-    },
-    {
-      id: 'festival',
-      icon: <Music className="w-10 h-10" />,
-      name: 'Festival/Concert',
-      description: 'Large-scale events with professional production and crowd management.',
-      features: ['Stage Setup', 'Sound', 'Security'],
-      avgBudget: '₹10L - ₹1Cr',
-      duration: '3-8 months',
-      teamSize: '15-25 people'
-    },
-    {
-      id: 'custom',
-      icon: <Sparkles className="w-10 h-10" />,
-      name: 'Custom Event',
-      description: 'Unique celebrations designed specifically for your vision and requirements.',
-      features: ['Flexible', 'Creative', 'Unique'],
-      avgBudget: '₹1L - ₹50L',
-      duration: '1-6 months',
-      teamSize: '5-20 people'
-    }
-  ];
-
-  const packages = [
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: '₹50K',
-      originalPrice: '₹75K',
-      description: 'Perfect for intimate gatherings and simple celebrations',
-      features: [
-        'Event Planning Consultation',
-        'Vendor Coordination',
-        'Basic Decoration Setup',
-        'Event Day Management',
-        '10-Person EVEA Team',
-        'Basic Photography',
-        'Standard Catering Options'
-      ],
-      icon: <Zap className="w-8 h-8" />,
-      color: 'from-blue-500 to-cyan-500',
-      popular: false
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: '₹1.5L',
-      originalPrice: '₹2L',
-      description: 'Comprehensive planning for memorable events',
-      features: [
-        'Everything in Basic',
-        'Premium Vendor Selection',
-        'Custom Theme Design',
-        'Advanced Decoration',
-        'Professional Photography & Video',
-        'Entertainment Coordination',
-        'Guest Management System',
-        'Post-Event Support'
-      ],
-      icon: <Award className="w-8 h-8" />,
-      color: 'from-purple-500 to-pink-500',
-      popular: true
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
-      price: '₹3L',
-      originalPrice: '₹4L',
-      description: 'Luxury experience with exclusive features',
-      features: [
-        'Everything in Professional',
-        'Luxury Venue Selection',
-        'Celebrity Chef Catering',
-        'Live Entertainment',
-        'Instagram Story Creation',
-        'Social Media Management',
-        'VIP Guest Services',
-        'Luxury Transportation',
-        'Premium Photography Package',
-        'Event Video Documentary'
-      ],
-      icon: <Crown className="w-8 h-8" />,
-      color: 'from-yellow-500 to-orange-500',
-      popular: false
-    }
-  ];
-
-  const formatBudget = (value: number) => {
-    if (value < 100000) {
-      return `₹${(value / 1000).toFixed(0)}K`;
-    } else if (value < 10000000) {
-      return `₹${(value / 100000).toFixed(1)}L`;
-    } else {
-      return `₹${(value / 10000000).toFixed(1)}Cr`;
-    }
-  };
-
-  const handleEventSelect = (eventId: string) => {
-    setSelectedEvent(eventId);
-    setCurrentStep(2);
-  };
-
-  const handleDetailsSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setShowPackages(true);
-    setCurrentStep(3);
-  };
-
-  const handlePackageSelect = (packageId: string) => {
-    setSelectedPackage(packageId);
-    setShowCallScheduler(true);
-    setCurrentStep(4);
-  };
-
-  const handleScheduleCall = () => {
-    // This would integrate with a calendar booking system
-    alert('Call scheduling feature will be integrated with calendar system');
+    onDetailsSubmit(details);
   };
 
   return (
-    <div className="min-h-screen">
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="max-w-2xl mx-auto"
+    >
+      <div className="flex items-center mb-8">
+        <button
+          onClick={onBack}
+          className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back</span>
+        </button>
+      </div>
 
+      <h2 className="text-3xl font-bold text-white mb-8 text-center">Event Details</h2>
+      
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
+        <div className="mb-6 p-4 bg-purple-500/20 rounded-xl">
+          <h3 className="text-xl font-bold text-white mb-2">{event.name}</h3>
+          <p className="text-gray-300">{event.description}</p>
+        </div>
 
-      {/* Step 1: Event Type Selection */}
-      {currentStep === 1 && (
-        <section className="min-h-screen flex items-center justify-center relative px-6 lg:px-8 pt-32">
-          <div className="max-w-6xl mx-auto text-center">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Location</label>
+            <input
+              type="text"
+              value={details.location}
+              onChange={(e) => setDetails({...details, location: e.target.value})}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+              placeholder="Enter event location"
+              required
+            />
+          </div>
 
-            
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="hero-title"
-            >
-              What Type of<br />
-              <span className="gradient-text">Event</span> Are You Planning?
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-16"
-            >
-              Choose your event type and we'll customize the perfect experience for you.
-            </motion.p>
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Date & Time</label>
+            <input
+              type="datetime-local"
+              value={details.date_time}
+              onChange={(e) => setDetails({...details, date_time: e.target.value})}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-purple-400"
+              required
+            />
+          </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {eventTypes.map((event, index) => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  onClick={() => handleEventSelect(event.id)}
-                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 cursor-pointer card-hover group"
-                >
-                  <div className="w-20 h-20 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    {event.icon}
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold mb-4">{event.name}</h3>
-                  <p className="text-gray-400 mb-6 leading-relaxed">{event.description}</p>
-                  
-                  <div className="space-y-3 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Avg. Budget:</span>
-                      <span className="text-pink-400 font-semibold">{event.avgBudget}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Duration:</span>
-                      <span className="text-purple-400 font-semibold">{event.duration}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Team Size:</span>
-                      <span className="text-cyan-400 font-semibold">{event.teamSize}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {event.features.map((feature, featureIndex) => (
-                      <span key={featureIndex} className="px-3 py-1 bg-pink-500/10 border border-pink-500/20 rounded-full text-xs text-pink-400">
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Budget (₹)</label>
+              <input
+                type="number"
+                value={details.budget || ''}
+                onChange={(e) => setDetails({...details, budget: Number(e.target.value)})}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                placeholder="Enter your budget"
+                min={event.base_price}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Guest Count</label>
+              <input
+                type="number"
+                value={details.guest_count || ''}
+                onChange={(e) => setDetails({...details, guest_count: Number(e.target.value)})}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                placeholder="Number of guests"
+                min={event.min_guests}
+                max={event.max_guests}
+                required
+              />
             </div>
           </div>
-        </section>
-      )}
 
-      {/* Step 2: Event Details Form */}
-      {currentStep === 2 && (
-        <section className="min-h-screen flex items-center justify-center relative px-6 lg:px-8 pt-32">
-          <div className="max-w-4xl mx-auto w-full">
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Additional Notes (Optional)</label>
+            <textarea
+              value={details.additional_notes || ''}
+              onChange={(e) => setDetails({...details, additional_notes: e.target.value})}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+              placeholder="Any special requirements or preferences..."
+              rows={3}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Processing...' : 'Get Package Recommendations'}
+          </button>
+        </form>
+      </div>
+    </motion.div>
+  );
+}
+
+// Step 3: Package Selection
+function PackageSelectionStep({ packages, onPackageSelect, onBack, loading }: {
+  packages: Package[];
+  onPackageSelect: (pkg: Package) => void;
+  onBack: () => void;
+  loading: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="max-w-4xl mx-auto"
+    >
+      <div className="flex items-center mb-8">
+        <button
+          onClick={onBack}
+          className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back</span>
+        </button>
+      </div>
+
+      <h2 className="text-3xl font-bold text-white mb-8 text-center">Choose Your Package</h2>
+      
+      {loading ? (
+        <div className="text-center text-gray-300">Loading packages...</div>
+      ) : (
+        <div className="grid md:grid-cols-3 gap-6">
+          {packages.map((pkg, index) => (
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              key={pkg.id}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-12 relative overflow-hidden"
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.05 }}
+              className={`bg-white/5 backdrop-blur-sm border rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
+                pkg.name === 'Professional' 
+                  ? 'border-purple-400 bg-purple-500/20' 
+                  : 'border-white/10 hover:bg-white/10'
+              }`}
+              onClick={() => onPackageSelect(pkg)}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5"></div>
-              
-              <div className="relative z-10">
-                <div className="text-center mb-12">
-                  <h2 className="text-4xl md:text-6xl font-black mb-4">
-                    Event <span className="gradient-text">Details</span>
-                  </h2>
-                  <p className="text-gray-400 text-lg">
-                    Tell us about your {eventTypes.find(e => e.id === selectedEvent)?.name.toLowerCase()} and we'll create the perfect package
-                  </p>
+              {pkg.name === 'Professional' && (
+                <div className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full w-fit mb-4">
+                  RECOMMENDED
                 </div>
-                
-                <form onSubmit={handleDetailsSubmit} className="space-y-8">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
-                        <MapPin className="w-4 h-4 inline mr-2" />
-                        Event Location
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter city or venue"
-                        value={eventDetails.location}
-                        onChange={(e) => setEventDetails({...eventDetails, location: e.target.value})}
-                        className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-pink-500 focus:outline-none transition-all"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
-                        <Users className="w-4 h-4 inline mr-2" />
-                        Guest Count
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="Expected number of guests"
-                        value={eventDetails.guests}
-                        onChange={(e) => setEventDetails({...eventDetails, guests: e.target.value})}
-                        className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-pink-500 focus:outline-none transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
-                        <Calendar className="w-4 h-4 inline mr-2" />
-                        Event Date
-                      </label>
-                      <input
-                        type="date"
-                        value={eventDetails.date}
-                        onChange={(e) => setEventDetails({...eventDetails, date: e.target.value})}
-                        className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white focus:border-pink-500 focus:outline-none transition-all"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
-                        <Clock className="w-4 h-4 inline mr-2" />
-                        Event Time
-                      </label>
-                      <input
-                        type="time"
-                        value={eventDetails.time}
-                        onChange={(e) => setEventDetails({...eventDetails, time: e.target.value})}
-                        className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white focus:border-pink-500 focus:outline-none transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
-                      <DollarSign className="w-4 h-4 inline mr-2" />
-                      Budget Range
-                    </label>
-                    <div className="space-y-4">
-                      <input
-                        type="range"
-                        min="50000"
-                        max="5000000"
-                        value={eventDetails.budget}
-                        onChange={(e) => setEventDetails({...eventDetails, budget: parseInt(e.target.value)})}
-                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
-                      />
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-400">Your Budget:</span>
-                        <span className="text-4xl font-black gradient-text">{formatBudget(eventDetails.budget)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
-                      <MessageCircle className="w-4 h-4 inline mr-2" />
-                      Additional Details
-                    </label>
-                    <textarea
-                      placeholder="Tell us about your vision, theme, or any special requirements..."
-                      value={eventDetails.description}
-                      onChange={(e) => setEventDetails({...eventDetails, description: e.target.value})}
-                      rows={4}
-                      className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-pink-500 focus:outline-none transition-all resize-none"
-                    />
-                  </div>
-
-                  <div className="flex gap-4 pt-8">
-                    <motion.button
-                      type="button"
-                      onClick={() => setCurrentStep(1)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex-1 py-6 bg-white/5 border-2 border-white/10 rounded-2xl text-white font-bold text-lg hover:border-pink-500 transition-all flex items-center justify-center gap-2"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                      Back
-                    </motion.button>
-                    <motion.button
-                      type="submit"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex-1 py-6 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl text-white font-bold text-lg hover:shadow-lg hover:shadow-pink-500/25 transition-all flex items-center justify-center gap-2"
-                    >
-                      View Packages
-                      <ArrowRight className="w-5 h-5" />
-                    </motion.button>
-                  </div>
-                </form>
+              )}
+              
+              <h3 className="text-2xl font-bold text-white mb-2">{pkg.name}</h3>
+              <div className="text-2xl font-bold text-purple-400 mb-4">
+                ₹{pkg.price_range_min.toLocaleString()} - ₹{pkg.price_range_max.toLocaleString()}
               </div>
-            </motion.div>
-          </div>
-        </section>
-      )}
-
-      {/* Step 3: Package Selection */}
-      {showPackages && (
-        <section className="min-h-screen py-32 px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-24"
-            >
-              <h2 className="section-title">
-                Choose Your <span className="gradient-text">Perfect Package</span>
-              </h2>
-              <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-                Based on your {eventTypes.find(e => e.id === selectedEvent)?.name.toLowerCase()} details, 
-                we've curated these packages just for you
-              </p>
-            </motion.div>
-
-            <div className="grid lg:grid-cols-3 gap-8">
-              {packages.map((pkg, index) => (
-                <motion.div
-                  key={pkg.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className={`relative bg-white/5 backdrop-blur-sm border rounded-3xl p-8 ${
-                    pkg.popular 
-                      ? 'border-pink-500/50 bg-gradient-to-br from-pink-500/10 to-purple-500/10' 
-                      : 'border-white/10'
-                  }`}
-                >
-                  {pkg.popular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-6 py-2 rounded-full text-sm font-bold">
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="text-center mb-8">
-                    <div className={`w-16 h-16 bg-gradient-to-r ${pkg.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                      {pkg.icon}
-                    </div>
-                    <h3 className="text-3xl font-bold mb-2">{pkg.name}</h3>
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <span className="text-4xl font-black gradient-text">{pkg.price}</span>
-                      <span className="text-gray-400 line-through">{pkg.originalPrice}</span>
-                    </div>
-                    <p className="text-gray-400">{pkg.description}</p>
+              
+              <div className="space-y-3 mb-6">
+                {pkg.features.map((feature, featureIndex) => (
+                  <div key={featureIndex} className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <span className="text-gray-300 text-sm">{feature}</span>
                   </div>
+                ))}
+              </div>
 
-                  <div className="space-y-4 mb-8">
-                    {pkg.features.map((feature, featureIndex) => (
-                      <div key={featureIndex} className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                        <span className="text-gray-300">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <motion.button
-                    onClick={() => handlePackageSelect(pkg.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-                      pkg.popular
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:shadow-pink-500/25'
-                        : 'bg-white/5 border border-white/10 text-white hover:border-pink-500'
-                    }`}
-                  >
-                    Select {pkg.name}
-                  </motion.button>
-                </motion.div>
-              ))}
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-              className="text-center mt-16"
-            >
-              <button
-                onClick={() => setCurrentStep(2)}
-                className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 mx-auto"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Details
+              <button className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300">
+                Select Package
               </button>
             </motion.div>
-          </div>
-        </section>
+          ))}
+        </div>
       )}
+    </motion.div>
+  );
+}
 
-      {/* Step 4: Call Scheduling */}
-      {showCallScheduler && (
-        <section className="min-h-screen flex items-center justify-center relative px-6 lg:px-8 pt-32">
-          <div className="max-w-4xl mx-auto w-full">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-12 relative overflow-hidden text-center"
+// Step 4: Call Scheduling
+function CallSchedulingStep({ onScheduleComplete, onBack, loading }: {
+  onScheduleComplete: (schedule: CallSchedule) => void;
+  onBack: () => void;
+  loading: boolean;
+}) {
+  const [schedule, setSchedule] = useState<CallSchedule>({
+    scheduled_time: '',
+    user_whatsapp: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onScheduleComplete(schedule);
+  };
+
+  // Generate available time slots (next 7 days, 9 AM to 6 PM)
+  const generateTimeSlots = () => {
+    const slots = [];
+    const now = new Date();
+    
+    for (let day = 0; day < 7; day++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() + day);
+      
+      for (let hour = 9; hour <= 18; hour++) {
+        const slot = new Date(date);
+        slot.setHours(hour, 0, 0, 0);
+        
+        if (slot > now) {
+          slots.push(slot.toISOString().slice(0, 16));
+        }
+      }
+    }
+    
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="max-w-2xl mx-auto"
+    >
+      <div className="flex items-center mb-8">
+        <button
+          onClick={onBack}
+          className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back</span>
+        </button>
+      </div>
+
+      <h2 className="text-3xl font-bold text-white mb-8 text-center">Schedule Your Call</h2>
+      
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
+        <div className="mb-6 p-4 bg-green-500/20 rounded-xl">
+          <h3 className="text-xl font-bold text-white mb-2">Almost Done!</h3>
+          <p className="text-gray-300">Schedule a call with our event planning expert to discuss your requirements in detail.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Your WhatsApp Number</label>
+            <input
+              type="tel"
+              value={schedule.user_whatsapp}
+              onChange={(e) => setSchedule({...schedule, user_whatsapp: e.target.value})}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+              placeholder="+91 98765 43210"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Preferred Call Time</label>
+            <select
+              value={schedule.scheduled_time}
+              onChange={(e) => setSchedule({...schedule, scheduled_time: e.target.value})}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-purple-400"
+              required
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5"></div>
-              
-              <div className="relative z-10">
-                <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                  <CheckCircle className="w-12 h-12 text-white" />
-                </div>
-                
-                <h2 className="text-4xl md:text-6xl font-black mb-6">
-                  Perfect! <span className="gradient-text">Package Selected</span>
-                </h2>
-                
-                <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-                  You've selected the <span className="text-pink-400 font-semibold">
-                    {packages.find(p => p.id === selectedPackage)?.name}
-                  </span> package. 
-                  Now let's schedule a call with our EVEA team to fine-tune every detail.
-                </p>
-
-                <div className="grid md:grid-cols-3 gap-8 mb-12">
-                  <div className="bg-white/5 rounded-2xl p-6">
-                    <Phone className="w-8 h-8 text-pink-500 mx-auto mb-4" />
-                    <h3 className="font-bold mb-2">30-Minute Call</h3>
-                    <p className="text-gray-400 text-sm">Deep dive into your vision and requirements</p>
-                  </div>
-                  <div className="bg-white/5 rounded-2xl p-6">
-                    <Shield className="w-8 h-8 text-purple-500 mx-auto mb-4" />
-                    <h3 className="font-bold mb-2">Expert Team</h3>
-                    <p className="text-gray-400 text-sm">10-person dedicated team for your event</p>
-                  </div>
-                  <div className="bg-white/5 rounded-2xl p-6">
-                    <Instagram className="w-8 h-8 text-cyan-500 mx-auto mb-4" />
-                    <h3 className="font-bold mb-2">Premium Features</h3>
-                    <p className="text-gray-400 text-sm">Instagram stories included in premium package</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 justify-center">
-                  <motion.button
-                    onClick={handleScheduleCall}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-12 py-6 bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl text-white font-bold text-lg hover:shadow-lg hover:shadow-pink-500/25 transition-all flex items-center gap-2"
-                  >
-                    <Phone className="w-5 h-5" />
-                    Schedule Call Now
-                  </motion.button>
-                  <motion.button
-                    onClick={() => setCurrentStep(3)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-12 py-6 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-lg hover:border-pink-500 transition-all flex items-center gap-2"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                    Back to Packages
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
+              <option value="">Select a time slot</option>
+              {timeSlots.map((slot) => (
+                <option key={slot} value={slot}>
+                  {new Date(slot).toLocaleString('en-IN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </option>
+              ))}
+            </select>
           </div>
-        </section>
-      )}
-    </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl font-semibold text-white hover:from-green-600 hover:to-emerald-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Scheduling...' : 'Schedule Call & Complete'}
+          </button>
+        </form>
+
+        <div className="mt-6 p-4 bg-blue-500/20 rounded-xl">
+          <h4 className="text-white font-semibold mb-2">What happens next?</h4>
+          <ul className="text-gray-300 text-sm space-y-1">
+            <li>• Admin will receive instant WhatsApp notification</li>
+            <li>• You&apos;ll get a confirmation message</li>
+            <li>• Our expert will call you at the scheduled time</li>
+            <li>• We&apos;ll discuss your requirements in detail</li>
+          </ul>
+        </div>
+      </div>
+    </motion.div>
   );
 }

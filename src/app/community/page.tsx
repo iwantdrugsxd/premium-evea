@@ -8,8 +8,8 @@ import {
   Share2, 
   Bookmark, 
   MoreHorizontal,
-  Play,
-  Plus
+  Plus,
+  ArrowRight
 } from 'lucide-react';
 
 export default function CommunityPage() {
@@ -103,6 +103,8 @@ export default function CommunityPage() {
           Connect with our community. Share your event stories, get inspired, and celebrate together.
         </motion.p>
       </section>
+
+
 
 
 

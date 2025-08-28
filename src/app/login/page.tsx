@@ -25,7 +25,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/passport-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +43,8 @@ export default function LoginPage() {
         // Redirect to marketplace
         window.location.href = '/marketplace';
       } else {
-        alert(data.error || 'Login failed');
+        const errorMessage = data.error || 'Login failed';
+        alert(`Login failed: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -54,8 +55,23 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth
-    console.log('Google login clicked');
+    // Google OAuth implementation
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    
+    if (!googleClientId) {
+      alert('Google OAuth not configured. Please set up Google Client ID.');
+      return;
+    }
+    
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${googleClientId}&` +
+      `redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/google/callback')}&` +
+      `response_type=code&` +
+      `scope=openid email profile&` +
+      `access_type=offline&` +
+      `prompt=consent`;
+    
+    window.location.href = googleAuthUrl;
   };
 
   return (
@@ -74,6 +90,11 @@ export default function LoginPage() {
             </Link>
             <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-gray-400">Sign in to your account to continue</p>
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-sm text-blue-300 mb-2">Test Credentials:</p>
+              <p className="text-xs text-blue-400">Email: john@example.com</p>
+              <p className="text-xs text-blue-400">Password: password</p>
+            </div>
           </div>
 
           {/* Login Form */}
