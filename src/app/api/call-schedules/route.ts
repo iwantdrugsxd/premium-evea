@@ -9,13 +9,13 @@ const supabase = createClient(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { event_request_id, scheduled_time, user_whatsapp } = body;
+    const { event_request_id, scheduled_time, user_email } = body;
 
     // Validate required fields
-    if (!event_request_id || !scheduled_time || !user_whatsapp) {
+    if (!event_request_id || !scheduled_time || !user_email) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: event_request_id, scheduled_time, user_whatsapp'
+        error: 'Missing required fields: event_request_id, scheduled_time, user_email'
       }, { status: 400 });
     }
 
@@ -49,25 +49,34 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    // Get admin settings
+    // Get admin settings (should be only one)
     const { data: adminSettings, error: adminError } = await supabase
       .from('admin_settings')
       .select('*')
       .eq('is_active', true)
+      .limit(1)
       .single();
 
-    if (adminError || !adminSettings) {
+    if (adminError) {
       console.error('❌ Error fetching admin settings:', adminError);
       console.error('📊 Error details:', {
-        message: adminError?.message,
-        code: adminError?.code,
-        details: adminError?.details,
-        hint: adminError?.hint,
+        message: adminError.message,
+        code: adminError.code,
+        details: adminError.details,
+        hint: adminError.hint,
         timestamp: new Date().toISOString()
       });
       return NextResponse.json({
         success: false,
-        error: 'Admin settings not found'
+        error: 'Admin settings not found or multiple records exist'
+      }, { status: 500 });
+    }
+
+    if (!adminSettings) {
+      console.error('❌ No admin settings found');
+      return NextResponse.json({
+        success: false,
+        error: 'Admin settings not configured'
       }, { status: 500 });
     }
 
@@ -78,7 +87,7 @@ export async function POST(request: Request) {
         event_planning_request_id: event_request_id,
         scheduled_time,
         admin_whatsapp: adminSettings.admin_whatsapp,
-        user_whatsapp,
+        user_email,
         status: 'scheduled'
       })
       .select()
@@ -96,7 +105,7 @@ export async function POST(request: Request) {
           event_planning_request_id: event_request_id,
           scheduled_time,
           admin_whatsapp: adminSettings.admin_whatsapp,
-          user_whatsapp,
+          user_email,
           status: 'scheduled'
         }
       });
@@ -127,19 +136,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Trigger WhatsApp notification
-    try {
-      await triggerWhatsAppNotification(callSchedule, eventRequest, adminSettings);
-    } catch (whatsappError) {
-      console.error('❌ Error sending WhatsApp notification:', whatsappError);
-      console.error('📊 Error details:', {
-        message: whatsappError instanceof Error ? whatsappError.message : 'Unknown error',
-        stack: whatsappError instanceof Error ? whatsappError.stack : undefined,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Send email notification
+    // Send email notification to admin
     try {
       await sendEmailNotification(eventRequest, callSchedule, adminSettings);
     } catch (emailError) {
@@ -155,7 +152,7 @@ export async function POST(request: Request) {
       event_request_id,
       call_schedule_id: callSchedule.id,
       scheduled_time: callSchedule.scheduled_time,
-      user_whatsapp: callSchedule.user_whatsapp,
+      user_email: callSchedule.user_email,
       admin_whatsapp: callSchedule.admin_whatsapp,
       timestamp: new Date().toISOString()
     });
@@ -233,81 +230,177 @@ export async function GET(request: Request) {
   }
 }
 
-async function triggerWhatsAppNotification(callSchedule: any, eventRequest: any, adminSettings: any) {
+async function sendEmailNotification(eventRequest: any, callSchedule: any, adminSettings: any) {
   try {
-    // Send WhatsApp message to admin
-    const adminMessage = `🎉 New Event Planning Request!
+    // Create professional HTML email for admin
+    const adminEmailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Event Planning Request - EVEA</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .section { margin-bottom: 25px; }
+          .section h3 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+          .detail { margin: 10px 0; }
+          .label { font-weight: bold; color: #555; }
+          .value { color: #333; }
+          .highlight { background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; }
+          .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 New Event Planning Request</h1>
+            <p>EVEA - Creating Unforgettable Moments</p>
+          </div>
+          
+          <div class="content">
+            <div class="section">
+              <h3>📋 Event Details</h3>
+              <div class="detail">
+                <span class="label">Event Type:</span>
+                <span class="value">${eventRequest.events.name}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Location:</span>
+                <span class="value">${eventRequest.location}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Event Date:</span>
+                <span class="value">${new Date(eventRequest.event_date).toLocaleDateString()}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Event Time:</span>
+                <span class="value">${new Date(eventRequest.event_date).toLocaleTimeString()}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Budget:</span>
+                <span class="value">₹${eventRequest.budget.toLocaleString()}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Guest Count:</span>
+                <span class="value">${eventRequest.guest_count}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Selected Package:</span>
+                <span class="value">${eventRequest.selected_package?.toUpperCase()}</span>
+              </div>
+              ${eventRequest.additional_notes ? `
+              <div class="detail">
+                <span class="label">Additional Notes:</span>
+                <span class="value">${eventRequest.additional_notes}</span>
+              </div>
+              ` : ''}
+            </div>
 
-Event: ${eventRequest.events.name}
+            <div class="section">
+              <h3>👤 Customer Information</h3>
+              <div class="detail">
+                <span class="label">Email Address:</span>
+                <span class="value">${callSchedule.user_email}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Call Scheduled For:</span>
+                <span class="value">${new Date(callSchedule.scheduled_time).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>📞 Quick Actions</h3>
+              <div class="highlight">
+                <p><strong>Please contact the customer at the scheduled time.</strong></p>
+                <p>Email: <a href="mailto:${callSchedule.user_email}">${callSchedule.user_email}</a></p>
+                <p>Call: <a href="tel:${adminSettings.admin_whatsapp}">${adminSettings.admin_whatsapp}</a></p>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>📊 Request Summary</h3>
+              <div class="detail">
+                <span class="label">Request ID:</span>
+                <span class="value">#${eventRequest.id}</span>
+              </div>
+              <div class="detail">
+                <span class="label">Submitted:</span>
+                <span class="value">${new Date(eventRequest.created_at).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>This is an automated notification from EVEA Event Planning System</p>
+            <p>© 2024 EVEA. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create plain text version
+    const adminEmailText = `
+🎉 NEW EVENT PLANNING REQUEST - EVEA
+
+EVENT DETAILS:
+━━━━━━━━━━━━━━━
+Event Type: ${eventRequest.events.name}
 Location: ${eventRequest.location}
-Date: ${new Date(eventRequest.event_date).toLocaleDateString()}
-Time: ${new Date(eventRequest.event_date).toLocaleTimeString()}
+Event Date: ${new Date(eventRequest.event_date).toLocaleDateString()}
+Event Time: ${new Date(eventRequest.event_date).toLocaleTimeString()}
 Budget: ₹${eventRequest.budget.toLocaleString()}
-Guests: ${eventRequest.guest_count}
-Package: ${eventRequest.selected_package}
+Guest Count: ${eventRequest.guest_count}
+Selected Package: ${eventRequest.selected_package?.toUpperCase()}
+${eventRequest.additional_notes ? `Additional Notes: ${eventRequest.additional_notes}` : ''}
 
-Call Scheduled: ${new Date(callSchedule.scheduled_time).toLocaleString()}
-User WhatsApp: ${callSchedule.user_whatsapp}
+CUSTOMER INFORMATION:
+━━━━━━━━━━━━━━━
+Email Address: ${callSchedule.user_email}
+Call Scheduled For: ${new Date(callSchedule.scheduled_time).toLocaleString()}
 
-Please contact the user to discuss their event requirements.`;
+QUICK ACTIONS:
+━━━━━━━━━━━━━━━
+Please contact the customer at the scheduled time.
+Email: ${callSchedule.user_email}
+Call: ${adminSettings.admin_whatsapp}
 
-    const response = await fetch('/api/whatsapp/send', {
+REQUEST SUMMARY:
+━━━━━━━━━━━━━━━
+Request ID: #${eventRequest.id}
+Submitted: ${new Date(eventRequest.created_at).toLocaleString()}
+
+---
+EVEA - Creating Unforgettable Moments
+© 2024 EVEA. All rights reserved.
+    `;
+
+    // Use full URL for server-side fetch
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    
+    // Send email to admin
+    const response = await fetch(`${baseUrl}/api/email/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        to: adminSettings.admin_whatsapp,
-        message: adminMessage
+        to: adminSettings.admin_email,
+        subject: `🎉 New Event Planning Request - ${eventRequest.events.name}`,
+        html: adminEmailHtml,
+        text: adminEmailText
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send WhatsApp message');
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to send email');
     }
 
-    console.log('WhatsApp notification sent successfully');
-  } catch (error) {
-    console.error('❌ Error in WhatsApp notification:', error);
-    console.error('📊 Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
-    throw error;
-  }
-}
-
-async function sendEmailNotification(eventRequest: any, callSchedule: any, adminSettings: any) {
-  try {
-    // This would integrate with your email service (SendGrid, AWS SES, etc.)
-    const emailData = {
-      to: adminSettings.admin_email,
-      subject: 'New Event Planning Request - EVEA',
-      html: `
-        <h2>🎉 New Event Planning Request</h2>
-                 <p><strong>Event:</strong> ${eventRequest.events.name}</p>
-         <p><strong>Location:</strong> ${eventRequest.location}</p>
-         <p><strong>Date:</strong> ${new Date(eventRequest.event_date).toLocaleDateString()}</p>
-         <p><strong>Time:</strong> ${new Date(eventRequest.event_date).toLocaleTimeString()}</p>
-        <p><strong>Budget:</strong> ₹${eventRequest.budget.toLocaleString()}</p>
-        <p><strong>Guests:</strong> ${eventRequest.guest_count}</p>
-        <p><strong>Package:</strong> ${eventRequest.selected_package}</p>
-        <p><strong>Call Scheduled:</strong> ${new Date(callSchedule.scheduled_time).toLocaleString()}</p>
-        <p><strong>User WhatsApp:</strong> ${callSchedule.user_whatsapp}</p>
-        <p><strong>Additional Notes:</strong> ${eventRequest.additional_notes || 'None'}</p>
-      `
-    };
-
-    // For now, just log the email data
-    console.log('Email notification data:', emailData);
-    
-    // TODO: Integrate with actual email service
-    // const response = await fetch('/api/email/send', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(emailData)
-    // });
-
-    console.log('Email notification logged successfully');
+    console.log('✅ Email notification sent to admin successfully');
   } catch (error) {
     console.error('❌ Error in email notification:', error);
     console.error('📊 Error details:', {
@@ -318,3 +411,5 @@ async function sendEmailNotification(eventRequest: any, callSchedule: any, admin
     throw error;
   }
 }
+
+

@@ -86,30 +86,30 @@ export default function ConfirmationStep({ form, onSubmit, onBack, loading, sele
       </motion.div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* WhatsApp Number */}
+        {/* Email Address */}
         <div className="space-y-4">
           <label className="block text-sm font-semibold text-white">
-            Your WhatsApp Number
+            Your Email Address
           </label>
           <input
-            {...register('userWhatsapp', { 
-              required: 'WhatsApp number is required',
+            {...register('userEmail', { 
+              required: 'Email address is required',
               pattern: {
-                value: /^(\+91|91)?[6-9]\d{9}$/,
-                message: 'Please enter a valid Indian phone number'
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: 'Please enter a valid email address'
               }
             })}
-            type="tel"
-            placeholder="+91 98765 43210"
+            type="email"
+            placeholder="your.email@example.com"
             className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
           />
-          {errors.userWhatsapp && (
+          {errors.userEmail && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-red-400 text-sm"
             >
-              {errors.userWhatsapp.message}
+              {errors.userEmail.message}
             </motion.div>
           )}
         </div>
@@ -144,6 +144,32 @@ export default function ConfirmationStep({ form, onSubmit, onBack, loading, sele
             </motion.div>
           )}
         </div>
+
+        {/* Contact Information */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-center pt-4"
+        >
+          <p className="text-white/60 text-sm mb-4">
+            Need immediate assistance? Contact us!
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href="mailto:admin@evea.com"
+              className="btn-primary"
+            >
+              📧 Email Us
+            </a>
+            <a
+              href="tel:+919876543210"
+              className="btn-secondary"
+            >
+              📞 Call Us
+            </a>
+          </div>
+        </motion.div>
 
         {/* Navigation Buttons */}
         <div className="flex gap-4 pt-8">

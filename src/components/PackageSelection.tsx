@@ -4,14 +4,16 @@ import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 
 interface Package {
-  id: string;
+  id: string | null;
   name: string;
-  price: string;
-  originalPrice: string;
-  description: string;
+  event_type: string;
+  price_range_min: number;
+  price_range_max: number;
+  guest_range_min: number;
+  guest_range_max: number;
   features: string[];
-  popular?: boolean;
-  gradient: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface PackageSelectionProps {
@@ -59,25 +61,35 @@ export default function PackageSelection({ packages, onSelect, onBack, loading, 
 
       <div className="grid md:grid-cols-3 gap-6">
         {packages.map((pkg, index) => {
-          const isSelected = selectedPackage === pkg.id;
+          const isSelected = selectedPackage === pkg.name;
+          
+          // Add gradient based on package name
+          const getGradient = (name: string) => {
+            switch (name) {
+              case 'basic': return 'from-blue-500 to-cyan-500';
+              case 'professional': return 'from-purple-500 to-pink-500';
+              case 'premium': return 'from-orange-500 to-red-500';
+              default: return 'from-gray-500 to-gray-600';
+            }
+          };
           
           return (
-            <motion.div
-              key={pkg.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+                                    <motion.div
+                          key={pkg.id || `package-${index}`}
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
               whileHover={{ scale: 1.05 }}
               className={`relative group cursor-pointer ${
                 isSelected ? 'ring-2 ring-pink-500 ring-offset-2 ring-offset-black' : ''
               }`}
               onClick={() => {
-                console.log('🎯 Package card clicked:', pkg.id);
-                onPackageSelect(pkg.id);
+                console.log('🎯 Package card clicked:', pkg.name);
+                onPackageSelect(pkg.name);
               }}
             >
-              <div className={`relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br ${pkg.gradient} transition-all duration-500 group-hover:shadow-2xl`}>
-                {pkg.popular && (
+              <div className={`relative overflow-hidden rounded-2xl p-8 bg-gradient-to-br ${getGradient(pkg.name)} transition-all duration-500 group-hover:shadow-2xl`}>
+                {pkg.name === 'professional' && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -91,12 +103,11 @@ export default function PackageSelection({ packages, onSelect, onBack, loading, 
                 
                 <div className="relative z-10">
                   <div className="text-center mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">{pkg.name}</h3>
+                    <h3 className="text-2xl font-bold text-white mb-2 capitalize">{pkg.name}</h3>
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="text-3xl font-black text-white">{pkg.price}</span>
-                      <span className="text-white/60 line-through">{pkg.originalPrice}</span>
+                      <span className="text-3xl font-black text-white">₹{pkg.price_range_min.toLocaleString()} - ₹{pkg.price_range_max.toLocaleString()}</span>
                     </div>
-                    <p className="text-white/80 text-sm">{pkg.description}</p>
+                    <p className="text-white/80 text-sm">{pkg.guest_range_min} - {pkg.guest_range_max} guests</p>
                   </div>
                   
                   <div className="space-y-3 mb-6">

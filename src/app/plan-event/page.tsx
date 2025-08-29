@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { Calendar, MapPin, Users, DollarSign, Star, CheckCircle, ArrowRight, ArrowLeft, Sparkles, Heart, Building, Cake, Gift, Music, Zap } from 'lucide-react';
 import EventTypeSelection from '@/components/EventTypeSelection';
 import EventDetailsForm from '@/components/EventDetailsForm';
+import ServiceSelection from '@/components/ServiceSelection';
 import PackageSelection from '@/components/PackageSelection';
 import ConfirmationStep from '@/components/ConfirmationStep';
 
@@ -19,14 +20,25 @@ interface EventType {
 }
 
 interface Package {
-  id: string;
+  id: string | null;
   name: string;
-  price: string;
-  originalPrice: string;
-  description: string;
+  event_type: string;
+  price_range_min: number;
+  price_range_max: number;
+  guest_range_min: number;
+  guest_range_max: number;
   features: string[];
-  popular?: boolean;
-  gradient: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  isRequired: boolean;
+  isPopular: boolean;
 }
 
 interface FormData {
@@ -36,55 +48,56 @@ interface FormData {
   budget: number;
   guestCount: number;
   additionalNotes: string;
+  selectedServices: Service[];
   selectedPackage: string;
-  userWhatsapp: string;
+  userEmail: string;
   scheduledTime: string;
 }
 
 const eventTypes: EventType[] = [
-  {
-    id: 'wedding',
-    name: 'Wedding',
+    {
+      id: 'wedding',
+      name: 'Wedding',
     icon: Heart,
     description: 'Create your dream wedding with comprehensive planning',
     gradient: 'from-pink-500 to-rose-500',
     features: ['Full Planning', '500+ Vendors', 'Premium Service']
-  },
-  {
-    id: 'corporate',
-    name: 'Corporate Event',
+    },
+    {
+      id: 'corporate',
+      name: 'Corporate Event',
     icon: Building,
     description: 'Professional events that leave lasting impressions',
     gradient: 'from-blue-500 to-cyan-500',
     features: ['Tech Setup', 'Streaming', 'Catering']
-  },
-  {
-    id: 'birthday',
-    name: 'Birthday Party',
+    },
+    {
+      id: 'birthday',
+      name: 'Birthday Party',
     icon: Cake,
     description: 'Celebrate milestones with unforgettable parties',
     gradient: 'from-purple-500 to-pink-500',
     features: ['Themes', 'Entertainment', 'Decor']
-  },
-  {
-    id: 'anniversary',
-    name: 'Anniversary',
+    },
+    {
+      id: 'anniversary',
+      name: 'Anniversary',
     icon: Gift,
     description: 'Mark special milestones with elegant celebrations',
     gradient: 'from-emerald-500 to-teal-500',
     features: ['Intimate', 'Romantic', 'Memorable']
-  },
-  {
-    id: 'festival',
-    name: 'Festival/Concert',
+    },
+    {
+      id: 'festival',
+      name: 'Festival/Concert',
     icon: Music,
     description: 'Large-scale events with professional production',
     gradient: 'from-orange-500 to-red-500',
     features: ['Stage Setup', 'Sound', 'Security']
-  },
-  {
-    id: 'custom',
-    name: 'Custom Event',
+    },
+    {
+      id: 'custom',
+      name: 'Custom Event',
     icon: Zap,
     description: 'Unique celebrations designed for your vision',
     gradient: 'from-indigo-500 to-purple-500',
@@ -123,6 +136,7 @@ export default function PlanEventWizard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [eventRequestId, setEventRequestId] = useState<number | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -130,7 +144,7 @@ export default function PlanEventWizard() {
   
   const progress = useMotionValue(0);
   const progressSpring = useSpring(progress, { stiffness: 100, damping: 30 });
-  const progressPercentage = useTransform(progressSpring, [0, 4], [0, 100]);
+  const progressPercentage = useTransform(progressSpring, [0, 5], [0, 100]);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -140,8 +154,9 @@ export default function PlanEventWizard() {
       budget: 100000,
       guestCount: 50,
       additionalNotes: '',
+      selectedServices: [],
       selectedPackage: '',
-      userWhatsapp: '',
+      userEmail: '',
       scheduledTime: ''
     }
   });
@@ -283,7 +298,7 @@ export default function PlanEventWizard() {
           console.log('📦 Received packages:', packageData.packages);
           console.log('📦 Package IDs:', packageData.packages.map((p: any) => p.id));
           setPackages(packageData.packages);
-          setCurrentStep(3);
+          setCurrentStep(3); // Move to service selection first
         } else {
           console.error('❌ Failed to get package recommendations:', packageData);
           setError('Failed to get package recommendations');
@@ -304,10 +319,55 @@ export default function PlanEventWizard() {
     }
   };
 
-  const handlePackageSelect = (packageId: string) => {
-    console.log('🎯 Package selected in UI:', packageId);
-    setSelectedPackage(packageId);
-    setValue('selectedPackage', packageId);
+  const handlePackageSelect = (packageName: string) => {
+    console.log('🎯 Package selected in UI:', packageName);
+    console.log('📊 Package selection details:', {
+      packageName,
+      packageName_type: typeof packageName,
+      validPackages: ['basic', 'professional', 'premium'],
+      isValid: ['basic', 'professional', 'premium'].includes(packageName)
+    });
+    setSelectedPackage(packageName);
+    setValue('selectedPackage', packageName);
+  };
+
+  const handleServicesSelected = (services: Service[]) => {
+    setSelectedServices(services);
+    setValue('selectedServices', services);
+    console.log('Services selected:', services);
+  };
+
+  const handleServicesContinue = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch packages for this event
+      const packagesResponse = await fetch('/api/packages/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_id: selectedEventId,
+          budget: form.getValues('budget'),
+          guest_count: form.getValues('guestCount')
+        })
+      });
+
+      const packagesData = await packagesResponse.json();
+
+      if (packagesData.success) {
+        setPackages(packagesData.packages);
+        console.log('Packages fetched:', packagesData.packages);
+        setCurrentStep(4); // Move to package selection
+      } else {
+        setError(packagesData.error || 'Failed to fetch packages');
+      }
+    } catch (error) {
+      console.error('❌ Frontend error in handleServicesContinue:', error);
+      setError('Failed to fetch packages');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePackageConfirm = async () => {
@@ -316,7 +376,17 @@ export default function PlanEventWizard() {
       setError(null);
 
       if (!selectedPackage) {
+        console.error('❌ No package selected');
         setError('Please select a package first');
+        setLoading(false);
+        return;
+      }
+
+      // Validate that the selected package is one of the expected values
+      const validPackages = ['basic', 'professional', 'premium'];
+      if (!validPackages.includes(selectedPackage)) {
+        console.error('❌ Invalid package selected:', selectedPackage);
+        setError('Please select a valid package');
         setLoading(false);
         return;
       }
@@ -364,7 +434,7 @@ export default function PlanEventWizard() {
           eventRequestId,
           response: data
         });
-        setCurrentStep(4);
+        setCurrentStep(5); // Move to schedule call step
       } else {
         console.error('❌ Package confirmation failed:', data);
         setError(data.error || 'Failed to confirm package');
@@ -387,34 +457,34 @@ export default function PlanEventWizard() {
       setLoading(true);
       setError(null);
 
-      console.log('Final submit data:', {
-        event_request_id: eventRequestId,
-        scheduled_time: data.scheduledTime,
-        user_whatsapp: data.userWhatsapp
-      });
+                        console.log('Final submit data:', {
+                    event_request_id: eventRequestId,
+                    scheduled_time: data.scheduledTime,
+                    user_email: data.userEmail
+                  });
 
-      // Convert time to full datetime (today + selected time)
-      const today = new Date();
-      const [hours, minutes] = data.scheduledTime.split(':');
-      today.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      const scheduledDateTime = today.toISOString();
+                  // Convert time to full datetime (today + selected time)
+                  const today = new Date();
+                  const [hours, minutes] = data.scheduledTime.split(':');
+                  today.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                  const scheduledDateTime = today.toISOString();
 
-      console.log('Scheduled datetime:', scheduledDateTime);
+                  console.log('Scheduled datetime:', scheduledDateTime);
 
-      const response = await fetch('/api/call-schedules', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_request_id: eventRequestId,
-          scheduled_time: scheduledDateTime,
-          user_whatsapp: data.userWhatsapp
-        })
-      });
+                  const response = await fetch('/api/call-schedules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      event_request_id: eventRequestId,
+                      scheduled_time: scheduledDateTime,
+                      user_email: data.userEmail
+                    })
+                  });
 
       const responseData = await response.json();
 
       if (responseData.success) {
-        alert('Event planning request submitted successfully! Our team will contact you soon.');
+        alert('Event planning request submitted successfully! You will receive a confirmation email and our team will contact you at the scheduled time.');
         setCurrentStep(1);
         setSelectedEventType(null);
         setSelectedPackage(null);
@@ -440,8 +510,9 @@ export default function PlanEventWizard() {
   const steps = [
     { number: 1, title: 'Choose Event Type', icon: Star },
     { number: 2, title: 'Event Details', icon: Calendar },
-    { number: 3, title: 'Select Package', icon: DollarSign },
-    { number: 4, title: 'Schedule Call', icon: CheckCircle }
+    { number: 3, title: 'Select Services', icon: Sparkles },
+    { number: 4, title: 'Select Package', icon: DollarSign },
+    { number: 5, title: 'Schedule Call', icon: CheckCircle }
   ];
 
   return (
@@ -453,8 +524,8 @@ export default function PlanEventWizard() {
         <div className="liquid-blob blob3"></div>
         <div className="liquid-blob blob4"></div>
         <div className="liquid-blob blob5"></div>
-      </div>
-
+                  </div>
+                  
       {/* Grid Overlay */}
       <div className="grid-overlay"></div>
 
@@ -472,7 +543,7 @@ export default function PlanEventWizard() {
                 <motion.div className="text-3xl font-black gradient-text">
                   {Math.round(progressPercentage.get())}%
                 </motion.div>
-              </div>
+          </div>
               
               <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
                 <motion.div
@@ -489,9 +560,9 @@ export default function PlanEventWizard() {
                     duration: 2,
                     repeat: Infinity,
                   }}
-                />
-              </div>
-            </div>
+                      />
+                    </div>
+                  </div>
 
             {/* Step Indicators */}
             <div className="space-y-8">
@@ -510,8 +581,8 @@ export default function PlanEventWizard() {
                         ? 'bg-green-500/10 border border-green-500/30' 
                         : 'bg-white/5 border border-white/10'
                     }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                   >
                     <motion.div
                       className={`w-12 h-12 rounded-full flex items-center justify-center ${
@@ -542,9 +613,9 @@ export default function PlanEventWizard() {
                         isActive ? 'text-white' : isCompleted ? 'text-green-400' : 'text-gray-300'
                       }`}>
                         {step.title}
-                      </div>
-                    </div>
-                  </motion.div>
+                  </div>
+              </div>
+            </motion.div>
                 );
               })}
             </div>
@@ -598,32 +669,42 @@ export default function PlanEventWizard() {
               )}
 
               {currentStep === 3 && (
-                <PackageSelection
+                <ServiceSelection
                   key="step3"
+                  eventId={selectedEventId!}
+                  onServicesSelected={handleServicesSelected}
+                  onBack={() => setCurrentStep(2)}
+                  onContinue={handleServicesContinue}
+                />
+              )}
+
+              {currentStep === 4 && (
+                <PackageSelection
+                  key="step4"
                   packages={packages}
                   onSelect={handlePackageConfirm}
                   onPackageSelect={handlePackageSelect}
-                  onBack={() => setCurrentStep(2)}
+                  onBack={() => setCurrentStep(3)}
                   loading={loading}
                   selectedPackage={selectedPackage}
                 />
               )}
 
-              {currentStep === 4 && (
+              {currentStep === 5 && (
                 <ConfirmationStep
-                  key="step4"
+                  key="step5"
                   form={form}
                   onSubmit={handleFinalSubmit}
-                  onBack={() => setCurrentStep(3)}
+                  onBack={() => setCurrentStep(4)}
                   loading={loading}
                   selectedEventType={selectedEventType}
                   selectedPackage={selectedPackage}
                 />
               )}
             </AnimatePresence>
+                </div>
+              </div>
           </div>
-        </div>
-      </div>
     </div>
   );
 }

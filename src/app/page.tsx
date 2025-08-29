@@ -31,48 +31,48 @@ export default function HomePage() {
               transition={{ duration: 0.8 }}
               className="text-left"
             >
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="hero-badge mb-8"
-              >
-                Launching in Mumbai
-              </motion.div>
-              
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+          >
+            Launching in Mumbai
+          </motion.div>
+          
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="text-5xl md:text-7xl lg:text-8xl font-black leading-none mb-8"
-              >
-                Events<br />
-                <span className="gradient-text">Reimagined</span>
-              </motion.h1>
-              
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            Events<br />
+            <span className="gradient-text">Reimagined</span>
+          </motion.h1>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
                 className="text-xl text-gray-400 mb-12 leading-relaxed max-w-lg"
-              >
-                End-to-end event management with dedicated teams, 
-                verified vendors, and transparent pricing.
-              </motion.p>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            End-to-end event management with dedicated teams, 
+            verified vendors, and transparent pricing.
+          </motion.p>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
                 className="flex flex-col sm:flex-row gap-6"
-              >
-                <Link href="/plan-event" className="btn-primary">
-                  Start Planning
-                </Link>
-                <Link href="/careers" className="btn-secondary">
-                  Become a Partner
-                </Link>
-              </motion.div>
+          >
+            <Link href="/plan-event" className="btn-primary">
+              Start Planning
+            </Link>
+            <Link href="/careers" className="btn-secondary">
+              Become a Partner
+            </Link>
+          </motion.div>
             </motion.div>
 
             {/* Right Section - Image Grid */}
@@ -326,14 +326,14 @@ export default function HomePage() {
                   ),
                   title: "Share Your Story",
                   description: "Capture and share your special moments with professional media and social integration."
-                }
-              ].map((step, index) => (
-                <motion.div
-                  key={index}
+              }
+            ].map((step, index) => (
+              <motion.div
+                key={index}
                   initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
-                  viewport={{ once: true }}
+                viewport={{ once: true }}
                   className={`flex items-center gap-12 ${
                     index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
                   } flex-col md:flex-row`}
@@ -349,13 +349,13 @@ export default function HomePage() {
                   <div className="flex-shrink-0">
                     <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white">
                       {step.icon(index)}
-                    </div>
-                  </div>
+                </div>
+                </div>
 
                   {/* Spacer for mobile */}
                   <div className="flex-1 md:hidden"></div>
-                </motion.div>
-              ))}
+              </motion.div>
+            ))}
             </div>
           </div>
         </div>

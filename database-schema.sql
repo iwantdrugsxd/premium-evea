@@ -23,7 +23,7 @@ CREATE TABLE user_event_requests (
   id SERIAL PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id),
   event_id INTEGER REFERENCES events(id),
-  location VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
   date_time TIMESTAMP NOT NULL,
   budget DECIMAL(10,2) NOT NULL,
   guest_count INTEGER NOT NULL,
