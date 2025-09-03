@@ -1,97 +1,110 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get('event_id');
 
     if (!eventId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Event ID is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Event ID is required' },
+        { status: 400 }
+      );
     }
 
-    console.log('🔍 Fetching services for event ID:', eventId);
-
-    // Fetch event services for the specific event
+    // Fetch services for the specific event
     const { data: services, error } = await supabase
       .from('event_services')
       .select('*')
       .eq('event_id', eventId)
       .order('is_required', { ascending: false })
       .order('is_popular', { ascending: false })
-      .order('category', { ascending: true });
+      .order('service_name', { ascending: true });
 
     if (error) {
-      console.error('❌ Error fetching event services:', error);
-      console.error('📊 Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-        timestamp: new Date().toISOString(),
-        eventId
-      });
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to fetch event services'
-      }, { status: 500 });
+      console.error('Error fetching event services:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch event services' },
+        { status: 500 }
+      );
     }
 
-    // Group services by category
-    const groupedServices = services.reduce((acc: any, service) => {
-      if (!acc[service.category]) {
-        acc[service.category] = [];
+    // Group services by category for better organization
+    const groupedServices = services.reduce((acc, service) => {
+      const category = service.category;
+      if (!acc[category]) {
+        acc[category] = [];
       }
-      acc[service.category].push({
-        id: service.id,
-        name: service.service_name,
-        description: service.service_description,
-        category: service.category,
-        isRequired: service.is_required,
-        isPopular: service.is_popular
-      });
+      acc[category].push(service);
       return acc;
-    }, {});
-
-    console.log('✅ Successfully fetched event services:', {
-      eventId,
-      totalServices: services.length,
-      categories: Object.keys(groupedServices),
-      timestamp: new Date().toISOString()
-    });
+    }, {} as Record<string, any[]>);
 
     return NextResponse.json({
       success: true,
-      services: services.map(service => ({
-        id: service.id,
-        name: service.service_name,
-        description: service.service_description,
-        category: service.category,
-        isRequired: service.is_required,
-        isPopular: service.is_popular
-      })),
-      groupedServices: groupedServices,
+      services,
+      groupedServices,
       totalServices: services.length
     });
 
   } catch (error) {
-    console.error('❌ Error in event-services API:', error);
-    console.error('📊 Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
+    console.error('Error in event services API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { eventId, serviceName, serviceDescription, category, isRequired, isPopular } = body;
+
+    if (!eventId || !serviceName || !serviceDescription || !category) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const { data: service, error } = await supabase
+      .from('event_services')
+      .insert({
+        event_id: eventId,
+        service_name: serviceName,
+        service_description: serviceDescription,
+        category,
+        is_required: isRequired || false,
+        is_popular: isPopular || false
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error creating event service:', error);
+      return NextResponse.json(
+        { error: 'Failed to create event service' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+      success: true,
+      service,
+      message: 'Event service created successfully'
+    });
+
+  } catch (error) {
+    console.error('Error in event services API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+      );
   }
 }

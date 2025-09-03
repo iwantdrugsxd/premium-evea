@@ -18,14 +18,12 @@ export default function VendorOnboardingPage() {
   const [formData, setFormData] = useState({
     // Core Information
     name: '',
-    categories: [] as string[],
+    serviceCategories: [] as string[],
     description: '',
     location: '',
     
     // Contact Details
     email: '',
-    phone: '',
-    address: '',
     
     // Services
     services_offered: [''],
@@ -94,7 +92,7 @@ export default function VendorOnboardingPage() {
 
     if (step === 1) {
       if (!formData.name.trim()) newErrors.name = 'Business name is required';
-      if (formData.categories.length === 0) newErrors.categories = 'At least one category is required';
+      if (formData.serviceCategories.length === 0) newErrors.serviceCategories = 'At least one service category is required';
       if (!formData.description.trim()) newErrors.description = 'Description is required';
       if (!formData.location.trim()) newErrors.location = 'Location is required';
     }
@@ -102,8 +100,6 @@ export default function VendorOnboardingPage() {
     if (step === 2) {
       if (!formData.email.trim()) newErrors.email = 'Email is required';
       else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Valid email is required';
-      if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-      if (!formData.address.trim()) newErrors.address = 'Address is required';
     }
 
     if (step === 3) {
@@ -148,12 +144,10 @@ export default function VendorOnboardingPage() {
       
       // Add all form fields
       submitFormData.append('name', formData.name);
-      submitFormData.append('categories', JSON.stringify(formData.categories));
+      submitFormData.append('serviceCategories', JSON.stringify(formData.serviceCategories));
       submitFormData.append('description', formData.description);
       submitFormData.append('location', formData.location);
       submitFormData.append('email', formData.email);
-      submitFormData.append('phone', formData.phone);
-      submitFormData.append('address', formData.address);
       submitFormData.append('services_offered', JSON.stringify(formData.services_offered));
       submitFormData.append('experience', formData.experience);
       submitFormData.append('events_count', formData.events_count.toString());
@@ -171,12 +165,10 @@ export default function VendorOnboardingPage() {
       // Log form data before submission
       console.log('Submitting form data:', {
         name: formData.name,
-        categories: formData.categories,
+        serviceCategories: formData.serviceCategories,
         description: formData.description,
         location: formData.location,
         email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
         services_offered: formData.services_offered,
         experience: formData.experience,
         events_count: formData.events_count,
@@ -209,16 +201,18 @@ export default function VendorOnboardingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const categories = [
+  const serviceCategories = [
     'Photography & Videography',
     'Catering & Food Services',
     'Decoration & Florist',
     'Music & Entertainment',
-    'Venue & Location',
-    'Transportation',
+    'Venues & Locations',
+    'Transportation & Logistics',
     'Wedding Planning',
     'Corporate Events',
     'Birthday & Celebrations',
+    'Lighting & Sound',
+    'Security Services',
     'Other'
   ];
 
@@ -323,18 +317,18 @@ export default function VendorOnboardingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Categories *</label>
+                    <label className="block text-sm font-medium mb-2">Service Types *</label>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {categories.map(category => (
+                      {serviceCategories.map(category => (
                         <label key={category} className="flex items-center gap-3 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={formData.categories.includes(category)}
+                            checked={formData.serviceCategories.includes(category)}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                handleInputChange('categories', [...formData.categories, category]);
+                                handleInputChange('serviceCategories', [...formData.serviceCategories, category]);
                               } else {
-                                handleInputChange('categories', formData.categories.filter(c => c !== category));
+                                handleInputChange('serviceCategories', formData.serviceCategories.filter(c => c !== category));
                               }
                             }}
                             className="w-4 h-4 text-purple-500 bg-white/5 border-2 border-white/10 rounded focus:ring-purple-500 focus:ring-2"
@@ -343,7 +337,7 @@ export default function VendorOnboardingPage() {
                         </label>
                       ))}
                     </div>
-                    {errors.categories && <p className="text-red-500 text-sm mt-1">{errors.categories}</p>}
+                    {errors.serviceCategories && <p className="text-red-500 text-sm mt-1">{errors.serviceCategories}</p>}
                   </div>
                 </div>
 
@@ -385,48 +379,18 @@ export default function VendorOnboardingPage() {
                   <p className="text-gray-400">How can customers reach you?</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Email Address *</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`w-full px-4 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all ${
-                        errors.email ? 'border-red-500' : 'border-white/10 focus:border-purple-500'
-                      }`}
-                      placeholder="your@email.com"
-                    />
-                    {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Phone Number *</label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className={`w-full px-4 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all ${
-                        errors.phone ? 'border-red-500' : 'border-white/10 focus:border-purple-500'
-                      }`}
-                      placeholder="+91 98765 43210"
-                    />
-                    {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                  </div>
-                </div>
-
                 <div>
-                  <label className="block text-sm font-medium mb-2">Business Address *</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    rows={3}
-                    className={`w-full px-4 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all resize-none ${
-                      errors.address ? 'border-red-500' : 'border-white/10 focus:border-purple-500'
+                  <label className="block text-sm font-medium mb-2">Email Address *</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className={`w-full px-4 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all ${
+                      errors.email ? 'border-red-500' : 'border-white/10 focus:border-purple-500'
                     }`}
-                    placeholder="Complete business address"
+                    placeholder="your@email.com"
                   />
-                  {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
               </div>
             )}

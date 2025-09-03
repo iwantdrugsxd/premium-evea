@@ -1,0 +1,91 @@
+{
+  "timestamp": "2025-08-30T09:51:59.936Z",
+  "environment": {
+    "nodeVersion": "v24.6.0",
+    "platform": "darwin",
+    "baseUrl": "http://localhost:3000",
+    "supabaseUrl": "https://ifnpjmhewowhbsenpaeh.supabase.co"
+  },
+  "testResults": [
+    {
+      "test": "Server Connectivity",
+      "status": "PASSED",
+      "details": "Server is running and accessible"
+    },
+    {
+      "test": "API Endpoint - Events API",
+      "status": "PASSED",
+      "details": "Endpoint is accessible"
+    },
+    {
+      "test": "API Endpoint - Event Requests API",
+      "status": "PASSED",
+      "details": "Endpoint is accessible"
+    },
+    {
+      "test": "API Endpoint - Package Recommendations API",
+      "status": "PASSED",
+      "details": "Endpoint is accessible"
+    },
+    {
+      "test": "API Endpoint - Call Schedules API",
+      "status": "PARTIAL",
+      "details": "Event request not found"
+    },
+    {
+      "test": "API Endpoint - Email Send API",
+      "status": "PASSED",
+      "details": "Endpoint is accessible"
+    },
+    {
+      "test": "API Endpoint - Debug Users API",
+      "status": "PASSED",
+      "details": "Endpoint is accessible"
+    },
+    {
+      "test": "API Endpoint - Debug Vendors API",
+      "status": "PASSED",
+      "details": "Endpoint is accessible"
+    },
+    {
+      "test": "Complete Plan Event Flow",
+      "status": "PASSED",
+      "details": "Flow completed successfully. Event Request: 17, Call Schedule: 9"
+    },
+    {
+      "test": "Email Sending - Admin Notification Email",
+      "status": "PASSED",
+      "details": "Email sent successfully via edge_function method"
+    },
+    {
+      "test": "Email Sending - User Confirmation Email",
+      "status": "PASSED",
+      "details": "Email sent successfully via edge_function method"
+    },
+    {
+      "test": "User Scenario - Logged-in User with Complete Profile",
+      "status": "PASSED",
+      "details": "Redirect logic working correctly (should redirect: false)"
+    },
+    {
+      "test": "User Scenario - Logged-in User with Incomplete Profile",
+      "status": "FAILED",
+      "details": "Expected redirect: true, got: false"
+    },
+    {
+      "test": "User Scenario - Non-Logged-in User",
+      "status": "FAILED",
+      "details": "Expected redirect: true, got: false"
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "passed": 11,
+    "partial": 1,
+    "failed": 2
+  },
+  "flowData": {
+    "eventRequestId": 17,
+    "callScheduleId": 9
+  }
+}

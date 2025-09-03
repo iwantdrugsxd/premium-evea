@@ -1,0 +1,66 @@
+{
+  "timestamp": "2025-08-31T19:28:26.151Z",
+  "tests": [
+    {
+      "name": "API Health Check",
+      "status": "PASSED",
+      "details": "Vendors API is accessible",
+      "timestamp": "2025-08-31T19:28:27.143Z"
+    },
+    {
+      "name": "Marketplace API",
+      "status": "PASSED",
+      "details": "Found 2 vendors",
+      "timestamp": "2025-08-31T19:28:27.486Z"
+    },
+    {
+      "name": "Marketplace Page",
+      "status": "PASSED",
+      "details": "Marketplace page is accessible",
+      "timestamp": "2025-08-31T19:28:27.619Z"
+    },
+    {
+      "name": "Vendor Onboarding Page",
+      "status": "PASSED",
+      "details": "Vendor onboarding page is accessible",
+      "timestamp": "2025-08-31T19:28:27.739Z"
+    },
+    {
+      "name": "Vendor Onboarding",
+      "status": "PASSED",
+      "details": "Vendor created with ID: 8",
+      "timestamp": "2025-08-31T19:28:31.441Z"
+    },
+    {
+      "name": "Vendor Marketplace Display",
+      "status": "PASSED",
+      "details": "Vendor found in marketplace: Test Vendor Integration",
+      "timestamp": "2025-08-31T19:28:33.765Z"
+    },
+    {
+      "name": "Vendor Details API",
+      "status": "PASSED",
+      "details": "All onboarding data is present in vendor details",
+      "timestamp": "2025-08-31T19:28:34.185Z"
+    },
+    {
+      "name": "Test Cleanup",
+      "status": "INFO",
+      "details": "Test vendor ID 8 created - manual cleanup required",
+      "timestamp": "2025-08-31T19:28:34.186Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 7,
+    "failed": 1,
+    "errors": [
+      {
+        "name": "Test Cleanup",
+        "status": "INFO",
+        "details": "Test vendor ID 8 created - manual cleanup required",
+        "timestamp": "2025-08-31T19:28:34.186Z"
+      }
+    ]
+  }
+}

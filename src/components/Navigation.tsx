@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, Info, Heart, Building, Camera, Users, Star, Gift, Music } from 'lucide-react';
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showAboutDropdown, setShowAboutDropdown] = useState(false);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -40,6 +41,16 @@ export default function Navigation() {
     window.location.href = '/';
   };
 
+  const aboutMenuItems = [
+    { href: '/about', label: 'About Us', icon: <Info className="w-4 h-4" /> },
+    { href: '/services', label: 'Our Services', icon: <Heart className="w-4 h-4" /> },
+    { href: '/portfolio', label: 'Portfolio', icon: <Camera className="w-4 h-4" /> },
+    { href: '/team', label: 'Our Team', icon: <Users className="w-4 h-4" /> },
+    { href: '/testimonials', label: 'Testimonials', icon: <Star className="w-4 h-4" /> },
+    { href: '/faq', label: 'FAQ', icon: <Gift className="w-4 h-4" /> },
+    { href: '/blog', label: 'Blog', icon: <Music className="w-4 h-4" /> }
+  ];
+
   return (
     <motion.nav
       className={`fixed w-full z-50 transition-all duration-300 ${
@@ -62,7 +73,48 @@ export default function Navigation() {
           <div className="hidden md:flex items-center gap-10">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/plan-event">Plan Event</NavLink>
-            <NavLink href="/packages">Packages</NavLink>
+            
+            {/* About EVEA Dropdown */}
+            <div className="relative">
+              <motion.button
+                onClick={() => setShowAboutDropdown(!showAboutDropdown)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors duration-300 relative group"
+              >
+                About EVEA
+                <ChevronDown className={`w-4 h-4 transition-transform ${showAboutDropdown ? 'rotate-180' : ''}`} />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300 group-hover:w-full"></span>
+              </motion.button>
+
+              {/* About Dropdown */}
+              <AnimatePresence>
+                {showAboutDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-0 mt-2 w-56 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg"
+                  >
+                    <div className="py-2">
+                      {aboutMenuItems.map((item, index) => (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/10 transition-colors"
+                          onClick={() => setShowAboutDropdown(false)}
+                        >
+                          {item.icon}
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
             <NavLink href="/marketplace">Marketplace</NavLink>
             <NavLink href="/community">Community</NavLink>
             <NavLink href="/careers">Careers</NavLink>

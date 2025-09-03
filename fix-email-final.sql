@@ -11,7 +11,7 @@ INSERT INTO public.admin_settings (
   admin_name, 
   is_active
 ) VALUES (
-  '+919876543210', 
+  '+7057379190', 
   'vnair0795@gmail.com', 
   'EVEA Admin', 
   true

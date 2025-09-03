@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -433,5 +431,168 @@
     .section-label {
       @apply text-xs px-5;
     }
+  }
+}
+
+/* Professional Event Selection Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.8); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+    transform: scale(1.05);
+  }
+}
+
+/* Enhanced Card Effects */
+.event-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.event-card:hover {
+  transform: translateY(-8px) scale(1.02);
+}
+
+.event-card.selected {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Professional Button Styles */
+.btn-professional {
+  @apply px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 active:scale-95;
+}
+
+/* Enhanced Glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Professional Typography */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Enhanced Selection Ring */
+.selection-ring {
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.5), 0 0 0 6px rgba(168, 85, 247, 0.2);
+}
+
+/* Professional Badge Styles */
+.badge-professional {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border transition-all duration-300;
+}
+
+.badge-services {
+  @apply bg-green-500/20 text-green-300 border-green-400/30;
+}
+
+.badge-packages {
+  @apply bg-blue-500/20 text-blue-300 border-blue-400/30;
+}
+
+/* Enhanced Hover Effects */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* Professional Grid Layout */
+.events-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (min-width: 768px) {
+  .events-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .events-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .events-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Enhanced Focus States */
+.event-card:focus-visible {
+  outline: 2px solid rgba(168, 85, 247, 0.8);
+  outline-offset: 4px;
+}
+
+/* Professional Loading States */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Enhanced Icon Animations */
+.icon-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.icon-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Professional Spacing System */
+.section-spacing {
+  @apply py-16 lg:py-24;
+}
+
+.card-spacing {
+  @apply p-6 lg:p-8;
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 640px) {
+  .events-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .card-spacing {
+    @apply p-4;
   }
 }

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   ArrowRight,
   MapPin,
@@ -335,7 +336,7 @@ export default function CareersPage() {
                     </div>
 
                     <button 
-                      onClick={() => router.push('/vendor-onboarding')}
+                      onClick={() => router.push(position.title === "Event Partners" ? '/event-partner' : '/vendor-onboarding')}
                       className="w-full py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-2"
                     >
                       Apply Now
@@ -425,16 +426,13 @@ export default function CareersPage() {
                     </ul>
                   </div>
 
-                  <button 
-                    onClick={() => {
-                      // Scroll to the collaboration form section
-                      document.getElementById('collaboration-form')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
+                  <Link 
+                    href="/collaboration"
                     className="w-full py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-2"
                   >
                     Partner With Us
                     <ArrowRight className="w-4 h-4" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             </motion.div>
@@ -442,91 +440,7 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* Collaboration Partners Section */}
-      <section id="collaboration-form" className="py-32 px-6 lg:px-8 bg-black/50">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-24"
-          >
-            <h2 className="text-5xl md:text-7xl font-black mb-8">
-              Collaboration <span className="gradient-text">Partners</span>
-            </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Event management companies needing services, companies wanting to sell their products at our events, and sponsorship opportunities.
-            </p>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 max-w-2xl mx-auto"
-          >
-            <form className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Business Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter your business name"
-                    className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Email</label>
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Phone Number</label>
-                <input
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Collaboration Type</label>
-                <select className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white focus:border-purple-500 focus:outline-none transition-all">
-                  <option value="">Select collaboration type</option>
-                  <option value="event-management">Event Management Services</option>
-                  <option value="product-sales">Product Sales at Events</option>
-                  <option value="sponsorship">Sponsorship Opportunities</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Additional Details</label>
-                <textarea
-                  placeholder="Tell us about your collaboration proposal..."
-                  rows={4}
-                  className="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none transition-all resize-none"
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-2"
-              >
-                Submit Collaboration Request
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          </motion.div>
-        </div>
-      </section>
 
       {/* Contact Section */}
       <section className="py-32 px-6 lg:px-8">

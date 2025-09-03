@@ -1,54 +1,58 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { data: events, error } = await supabase
+    // Get all events
+    const { data: allEvents, error: eventsError } = await supabase
       .from('events')
       .select('*')
       .order('name');
 
-    if (error) throw error;
+    if (eventsError) throw eventsError;
 
-    // Transform events to match the frontend expectations
-    const transformedEvents = events?.map(event => ({
-      id: event.id,
-      name: event.name,
-      category: event.name.toLowerCase().replace(/\s+/g, '-'), // Convert name to category
-      description: event.description,
-      base_price: parseFloat(event.avg_budget.replace(/[^\d.]/g, '')), // Extract numeric value
-      min_guests: 50, // Default values
-      max_guests: 500,
-      is_active: true
-    })) || [];
+    // Filter events that have both services and packages
+    const eventsWithData = [];
+    
+    for (const event of allEvents) {
+      // Check if event has services
+      const { data: services, error: servicesError } = await supabase
+        .from('event_services')
+        .select('id')
+        .eq('event_id', event.id)
+        .limit(1);
 
-    console.log('✅ Successfully fetched events:', {
-      count: transformedEvents.length,
-      events: transformedEvents.map(e => ({ id: e.id, name: e.name, category: e.category })),
-      timestamp: new Date().toISOString()
-    });
+      if (servicesError) continue;
 
-    return NextResponse.json({ 
+      // Check if event has packages
+      const { data: packages, error: packagesError } = await supabase
+        .from('event_packages')
+        .select('id')
+        .eq('event_id', event.id)
+        .limit(1);
+
+      if (packagesError) continue;
+
+      // Only include events that have both services and packages
+      if (services.length > 0 && packages.length > 0) {
+        eventsWithData.push(event);
+      }
+    }
+
+    return NextResponse.json({
       success: true,
-      events: transformedEvents
+      data: eventsWithData
     });
+
   } catch (error) {
-    console.error('❌ Error fetching events:', error);
-    console.error('📊 Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
+    console.error('Error fetching events:', error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to fetch events' 
-      },
+      { error: 'Failed to fetch events' },
       { status: 500 }
     );
   }

@@ -1,710 +1,420 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { Calendar, MapPin, Users, DollarSign, Star, CheckCircle, ArrowRight, ArrowLeft, Sparkles, Heart, Building, Cake, Gift, Music, Zap } from 'lucide-react';
-import EventTypeSelection from '@/components/EventTypeSelection';
-import EventDetailsForm from '@/components/EventDetailsForm';
-import ServiceSelection from '@/components/ServiceSelection';
-import PackageSelection from '@/components/PackageSelection';
-import ConfirmationStep from '@/components/ConfirmationStep';
-
-interface EventType {
-  id: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  description: string;
-  gradient: string;
-  features: string[];
-}
-
-interface Package {
-  id: string | null;
-  name: string;
-  event_type: string;
-  price_range_min: number;
-  price_range_max: number;
-  guest_range_min: number;
-  guest_range_max: number;
-  features: string[];
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Service {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  isRequired: boolean;
-  isPopular: boolean;
-}
+import { motion } from 'framer-motion';
+import Navigation from '@/components/Navigation';
+import Step2ServiceSelection from '@/components/plan-event/Step2ServiceSelection';
+import Step3EventDetails from '@/components/plan-event/Step3EventDetails';
+import Step4PackageSelection from '@/components/plan-event/Step4PackageSelection';
+import Step5ScheduleConsultation from '@/components/plan-event/Step5ScheduleConsultation';
+import Step6ContactInformation from '@/components/plan-event/Step6ContactInformation';
+import Step7Confirmation from '@/components/plan-event/Step7Confirmation';
+import Step8Success from '@/components/plan-event/Step8Success';
 
 interface FormData {
   eventType: string;
-  location: string;
-  date: string;
-  budget: number;
-  guestCount: number;
+  selectedServices: string[];
+  eventLocation: string;
+  eventDate: string;
+  guestCount: string;
+  budget: string;
   additionalNotes: string;
-  selectedServices: Service[];
   selectedPackage: string;
-  userEmail: string;
+  scheduledDate: string;
   scheduledTime: string;
+  callDuration: string;
+  flexibility: string;
+  userName: string;
+  userPhone: string;
+  userEmail: string;
 }
 
-const eventTypes: EventType[] = [
-    {
-      id: 'wedding',
-      name: 'Wedding',
-    icon: Heart,
-    description: 'Create your dream wedding with comprehensive planning',
-    gradient: 'from-pink-500 to-rose-500',
-    features: ['Full Planning', '500+ Vendors', 'Premium Service']
-    },
-    {
-      id: 'corporate',
-      name: 'Corporate Event',
-    icon: Building,
-    description: 'Professional events that leave lasting impressions',
-    gradient: 'from-blue-500 to-cyan-500',
-    features: ['Tech Setup', 'Streaming', 'Catering']
-    },
-    {
-      id: 'birthday',
-      name: 'Birthday Party',
-    icon: Cake,
-    description: 'Celebrate milestones with unforgettable parties',
-    gradient: 'from-purple-500 to-pink-500',
-    features: ['Themes', 'Entertainment', 'Decor']
-    },
-    {
-      id: 'anniversary',
-      name: 'Anniversary',
-    icon: Gift,
-    description: 'Mark special milestones with elegant celebrations',
-    gradient: 'from-emerald-500 to-teal-500',
-    features: ['Intimate', 'Romantic', 'Memorable']
-    },
-    {
-      id: 'festival',
-      name: 'Festival/Concert',
-    icon: Music,
-    description: 'Large-scale events with professional production',
-    gradient: 'from-orange-500 to-red-500',
-    features: ['Stage Setup', 'Sound', 'Security']
-    },
-    {
-      id: 'custom',
-      name: 'Custom Event',
-    icon: Zap,
-    description: 'Unique celebrations designed for your vision',
-    gradient: 'from-indigo-500 to-purple-500',
-    features: ['Flexible', 'Creative', 'Unique']
-  }
-];
-
-// Helper functions to get event icons and gradients
-const getEventIcon = (category: string) => {
-  const iconMap: { [key: string]: React.ComponentType<any> } = {
-    'wedding': Heart,
-    'corporate': Building,
-    'birthday': Cake,
-    'anniversary': Gift,
-    'festival': Music,
-    'custom': Zap
-  };
-  return iconMap[category] || Zap;
+const stepInfo = {
+  1: { title: "Choose Your Event Type", subtitle: "Select the type of event you're planning to get started" },
+  2: { title: "Select Your Services", subtitle: "Choose the services you need for your perfect event" },
+  3: { title: "Event Details", subtitle: "Tell us more about your event requirements" },
+  4: { title: "Choose Your Package", subtitle: "Select the package that best fits your needs and budget" },
+  5: { title: "Schedule Consultation", subtitle: "Book a call with our experts for personalized planning" },
+  6: { title: "Contact Information", subtitle: "Share your details so we can reach out with your quote" },
+  7: { title: "Confirm Your Request", subtitle: "Review all details before submitting your event request" }
 };
 
-const getEventGradient = (category: string) => {
-  const gradientMap: { [key: string]: string } = {
-    'wedding': 'from-pink-500 to-rose-500',
-    'corporate': 'from-blue-500 to-cyan-500',
-    'birthday': 'from-purple-500 to-pink-500',
-    'anniversary': 'from-emerald-500 to-teal-500',
-    'festival': 'from-orange-500 to-red-500',
-    'custom': 'from-indigo-500 to-purple-500'
-  };
-  return gradientMap[category] || 'from-indigo-500 to-purple-500';
-};
-
-export default function PlanEventWizard() {
+export default function PlanEventPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [eventRequestId, setEventRequestId] = useState<number | null>(null);
-  const [packages, setPackages] = useState<Package[]>([]);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestId, setRequestId] = useState('');
+  const [scheduledCallInfo, setScheduledCallInfo] = useState('');
   const [events, setEvents] = useState<any[]>([]);
+  const [eventServices, setEventServices] = useState<any[]>([]);
+  const [eventPackages, setEventPackages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const progress = useMotionValue(0);
-  const progressSpring = useSpring(progress, { stiffness: 100, damping: 30 });
-  const progressPercentage = useTransform(progressSpring, [0, 5], [0, 100]);
-
-  const form = useForm<FormData>({
-    defaultValues: {
-      eventType: '',
-      location: '',
-      date: '',
-      budget: 100000,
-      guestCount: 50,
-      additionalNotes: '',
-      selectedServices: [],
-      selectedPackage: '',
-      userEmail: '',
-      scheduledTime: ''
-    }
+  const [formData, setFormData] = useState<FormData>({
+    eventType: '',
+    selectedServices: ['venue', 'coordination'],
+    eventLocation: '',
+    eventDate: '',
+    guestCount: '',
+    budget: '',
+    additionalNotes: '',
+    selectedPackage: '',
+    scheduledDate: '',
+    scheduledTime: '',
+    callDuration: '45',
+    flexibility: 'flexible',
+    userName: '',
+    userPhone: '',
+    userEmail: ''
   });
 
-  const { watch, setValue, handleSubmit, formState: { errors } } = form;
-  const watchedValues = watch();
-
+  // Custom cursor effect
   useEffect(() => {
-    progress.set(currentStep - 1);
-  }, [currentStep, progress]);
+    const handleMouseMove = (e: MouseEvent) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+    };
 
-  // Fetch events from API on component mount
+    const handleMouseEnter = () => setIsHovering(true);
+    const handleMouseLeave = () => setIsHovering(false);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseenter', handleMouseEnter);
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseenter', handleMouseEnter);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
+
+  // Fetch events data on component mount
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('/api/events');
-        const data = await response.json();
-        console.log('Fetched events:', data);
-        if (data.success) {
-          setEvents(data.events);
-        }
-      } catch (error) {
-        console.error('Failed to fetch events:', error);
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch('/api/events');
+        if (response.ok) {
+          const result = await response.json();
+          setEvents(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+        setLoading(false);
       }
     };
+
     fetchEvents();
   }, []);
 
-  const handleEventTypeSelect = (eventType: string) => {
-    setSelectedEventType(eventType);
-    setValue('eventType', eventType);
-    
-    console.log('Selected event type:', eventType);
-    console.log('Available events:', events);
-    
-    // Map hardcoded event types to database categories
-    const categoryMapping: { [key: string]: string } = {
-      'wedding': 'wedding',
-      'corporate': 'corporate-event',
-      'birthday': 'birthday-party',
-      'anniversary': 'anniversary',
-      'festival': 'festival-concert',
-      'custom': 'custom-event'
-    };
-    
-    const mappedCategory = categoryMapping[eventType];
-    console.log('Mapped category:', mappedCategory);
-    
-    // Find the event ID from the events array
-    const event = events.find(e => e.category === mappedCategory);
-    console.log('Found event:', event);
-    
+  // Fetch services when event type changes
+  useEffect(() => {
+    const fetchServices = async () => {
+      if (!formData.eventType) return;
+      
+      try {
+        const event = events.find(e => e.name.toLowerCase() === formData.eventType.toLowerCase());
     if (event) {
-      setSelectedEventId(event.id);
-      console.log('Set selected event ID:', event.id);
-    } else {
-      console.log('No event found for category:', mappedCategory);
-      console.log('Available categories:', events.map(e => e.category));
-      // For now, let's use a fallback ID based on the event type
-      const fallbackIds: { [key: string]: number } = {
-        'wedding': 1,
-        'corporate': 2,
-        'birthday': 3,
-        'anniversary': 4,
-        'festival': 5,
-        'custom': 6
-      };
-      const fallbackId = fallbackIds[eventType];
-      if (fallbackId) {
-        setSelectedEventId(fallbackId);
-        console.log('Using fallback event ID:', fallbackId);
-      } else {
-        console.log('No fallback ID found for event type:', eventType);
-      }
-    }
-    
-    setTimeout(() => setCurrentStep(2), 500);
-  };
-
-  const handleEventDetailsSubmit = async (data: FormData) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validate that we have an event ID
-      if (!selectedEventId) {
-        setError('Please select an event type first');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Submitting event details:', {
-        event_id: selectedEventId,
-        location: data.location,
-        date_time: data.date,
-        budget: data.budget,
-        guest_count: data.guestCount,
-        additional_notes: data.additionalNotes
-      });
-
-      const response = await fetch('/api/event-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_id: selectedEventId,
-          location: data.location,
-          date_time: data.date,
-          budget: data.budget,
-          guest_count: data.guestCount,
-          additional_notes: data.additionalNotes
-        })
-      });
-
-      const responseData = await response.json();
-
-      console.log('Response from API:', responseData);
-
-      if (responseData.success) {
-        const newEventRequestId = responseData.event_request.id;
-        setEventRequestId(newEventRequestId);
-        console.log('✅ Event request created with ID:', newEventRequestId);
-        console.log('📊 Event request details:', responseData.event_request);
-        console.log('🔧 State update - eventRequestId set to:', newEventRequestId);
-        
-        // Fetch package recommendations
-        const packageResponse = await fetch('/api/packages/recommend', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event_id: selectedEventId,
-            budget: data.budget,
-            guest_count: data.guestCount
-          })
-        });
-
-        const packageData = await packageResponse.json();
-
-        if (packageData.success) {
-          console.log('📦 Received packages:', packageData.packages);
-          console.log('📦 Package IDs:', packageData.packages.map((p: any) => p.id));
-          setPackages(packageData.packages);
-          setCurrentStep(3); // Move to service selection first
-        } else {
-          console.error('❌ Failed to get package recommendations:', packageData);
-          setError('Failed to get package recommendations');
+          const response = await fetch(`/api/events/${event.id}/services`);
+          if (response.ok) {
+            const result = await response.json();
+            setEventServices(result.data.services || []);
+          }
         }
-      } else {
-        setError(responseData.error || 'Failed to submit event details');
+      } catch (error) {
+        console.error('Error fetching services:', error);
       }
-    } catch (error) {
-      console.error('❌ Frontend error in handleEventDetailsSubmit:', error);
-      console.error('📊 Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
-      });
-      setError('Failed to submit event details');
-    } finally {
-      setLoading(false);
+    };
+
+    fetchServices();
+  }, [formData.eventType, events]);
+
+  // Fetch packages when event type changes
+  useEffect(() => {
+    const fetchPackages = async () => {
+      if (!formData.eventType) return;
+      
+      try {
+        const event = events.find(e => e.name.toLowerCase() === formData.eventType.toLowerCase());
+        if (event) {
+          const response = await fetch(`/api/events/${event.id}/packages`);
+          if (response.ok) {
+            const result = await response.json();
+            setEventPackages(result.data || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+      }
+    };
+
+    fetchPackages();
+  }, [formData.eventType, events]);
+
+  const nextStep = () => {
+    if (currentStep < 8) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const handlePackageSelect = (packageName: string) => {
-    console.log('🎯 Package selected in UI:', packageName);
-    console.log('📊 Package selection details:', {
-      packageName,
-      packageName_type: typeof packageName,
-      validPackages: ['basic', 'professional', 'premium'],
-      isValid: ['basic', 'professional', 'premium'].includes(packageName)
-    });
-    setSelectedPackage(packageName);
-    setValue('selectedPackage', packageName);
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
-  const handleServicesSelected = (services: Service[]) => {
-    setSelectedServices(services);
-    setValue('selectedServices', services);
-    console.log('Services selected:', services);
+  const updateFormData = (field: keyof FormData, value: string | string[]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleServicesContinue = async () => {
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const submitRequest = async () => {
+    setIsSubmitting(true);
     try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch packages for this event
-      const packagesResponse = await fetch('/api/packages/recommend', {
+      // Submit to API
+      const response = await fetch('/api/event-planning-requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_id: selectedEventId,
-          budget: form.getValues('budget'),
-          guest_count: form.getValues('guestCount')
-        })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
-      const packagesData = await packagesResponse.json();
-
-      if (packagesData.success) {
-        setPackages(packagesData.packages);
-        console.log('Packages fetched:', packagesData.packages);
-        setCurrentStep(4); // Move to package selection
-      } else {
-        setError(packagesData.error || 'Failed to fetch packages');
+      if (!response.ok) {
+        throw new Error('Failed to submit request');
       }
+
+      const result = await response.json();
+
+      // Set request ID from API response
+      setRequestId(`#EVE-${result.requestId}`);
+      
+      // Format scheduled call info
+      const dateObj = new Date(formData.scheduledDate);
+      const dateStr = dateObj.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const timeStr = new Date(`2000-01-01T${formData.scheduledTime}:00`).toLocaleTimeString('en-IN', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      setScheduledCallInfo(`${dateStr} at ${timeStr}`);
+      
+      // Move to success step
+        nextStep();
     } catch (error) {
-      console.error('❌ Frontend error in handleServicesContinue:', error);
-      setError('Failed to fetch packages');
+      console.error('Submission error:', error);
+      alert('Failed to submit your request. Please try again.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
-
-  const handlePackageConfirm = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!selectedPackage) {
-        console.error('❌ No package selected');
-        setError('Please select a package first');
-        setLoading(false);
-        return;
-      }
-
-      // Validate that the selected package is one of the expected values
-      const validPackages = ['basic', 'professional', 'premium'];
-      if (!validPackages.includes(selectedPackage)) {
-        console.error('❌ Invalid package selected:', selectedPackage);
-        setError('Please select a valid package');
-        setLoading(false);
-        return;
-      }
-
-      // Validate that we have an event request ID
-      console.log('🔍 Current state before package confirmation:', {
-        eventRequestId,
-        eventRequestId_type: typeof eventRequestId,
-        currentStep,
-        selectedEventType,
-        selectedEventId,
-        selectedPackage
-      });
-
-      if (!eventRequestId) {
-        console.error('❌ No event request ID found for package selection');
-        setError('Please complete the event details first');
-        setLoading(false);
-        return;
-      }
-
-      console.log('📤 Sending package confirmation data:', {
-        event_request_id: eventRequestId,
-        selected_package: selectedPackage,
-        eventRequestId_type: typeof eventRequestId,
-        selectedPackage_type: typeof selectedPackage,
-        eventRequestId_value: eventRequestId,
-        selectedPackage_value: selectedPackage
-      });
-
-      const response = await fetch('/api/event-requests/update-package', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_request_id: eventRequestId,
-          selected_package: selectedPackage
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        console.log('✅ Package confirmed successfully:', {
-          selectedPackage,
-          eventRequestId,
-          response: data
-        });
-        setCurrentStep(5); // Move to schedule call step
-      } else {
-        console.error('❌ Package confirmation failed:', data);
-        setError(data.error || 'Failed to confirm package');
-      }
-    } catch (error) {
-      console.error('❌ Frontend error in handlePackageConfirm:', error);
-      console.error('📊 Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
-      });
-      setError('Failed to confirm package');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFinalSubmit = async (data: FormData) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-                        console.log('Final submit data:', {
-                    event_request_id: eventRequestId,
-                    scheduled_time: data.scheduledTime,
-                    user_email: data.userEmail
-                  });
-
-                  // Convert time to full datetime (today + selected time)
-                  const today = new Date();
-                  const [hours, minutes] = data.scheduledTime.split(':');
-                  today.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                  const scheduledDateTime = today.toISOString();
-
-                  console.log('Scheduled datetime:', scheduledDateTime);
-
-                  const response = await fetch('/api/call-schedules', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      event_request_id: eventRequestId,
-                      scheduled_time: scheduledDateTime,
-                      user_email: data.userEmail
-                    })
-                  });
-
-      const responseData = await response.json();
-
-      if (responseData.success) {
-        alert('Event planning request submitted successfully! You will receive a confirmation email and our team will contact you at the scheduled time.');
-        setCurrentStep(1);
-        setSelectedEventType(null);
-        setSelectedPackage(null);
-        setEventRequestId(null);
-        setPackages([]);
-        form.reset();
-      } else {
-        setError(responseData.error || 'Failed to schedule consultation');
-      }
-    } catch (error) {
-      console.error('❌ Frontend error in handleFinalSubmit:', error);
-      console.error('📊 Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
-      });
-      setError('Failed to schedule consultation');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const steps = [
-    { number: 1, title: 'Choose Event Type', icon: Star },
-    { number: 2, title: 'Event Details', icon: Calendar },
-    { number: 3, title: 'Select Services', icon: Sparkles },
-    { number: 4, title: 'Select Package', icon: DollarSign },
-    { number: 5, title: 'Schedule Call', icon: CheckCircle }
-  ];
 
   return (
-    <div className="min-h-screen bg-black overflow-hidden relative">
-      {/* Liquid Background */}
-      <div className="liquid-bg">
-        <div className="liquid-blob blob1"></div>
-        <div className="liquid-blob blob2"></div>
-        <div className="liquid-blob blob3"></div>
-        <div className="liquid-blob blob4"></div>
-        <div className="liquid-blob blob5"></div>
-                  </div>
-                  
-      {/* Grid Overlay */}
-      <div className="grid-overlay"></div>
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden" style={{ cursor: 'none' }}>
+      {/* Navigation */}
+      <Navigation />
 
-      {/* Grain Overlay */}
-      <div className="grain"></div>
+      {/* Aurora Background */}
+      <div className="fixed inset-0 -z-10 opacity-30">
+        <div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent via-pink-500/30 to-transparent animate-spin" 
+             style={{ animation: 'aurora 15s linear infinite' }}></div>
+      </div>
 
-      <div className="relative z-10 flex h-screen">
-        {/* Left Side - Progress Visualization */}
-        <div className="hidden lg:flex lg:w-1/2 p-12 items-center justify-center">
-          <div className="w-full max-w-md">
-            {/* Progress Bar */}
-            <div className="mb-12">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-white">Your Journey</h2>
-                <motion.div className="text-3xl font-black gradient-text">
-                  {Math.round(progressPercentage.get())}%
-                </motion.div>
-          </div>
-              
-              <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 rounded-full"
-                  style={{ width: progressSpring }}
-                />
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-300 rounded-full blur-sm"
-                  style={{ width: progressSpring }}
-                  animate={{
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                  }}
-                      />
-                    </div>
-                  </div>
+      {/* Custom Cursor */}
+      <div 
+        className="fixed w-2.5 h-2.5 bg-purple-500 rounded-full pointer-events-none z-[9999] transition-transform duration-150 mix-blend-screen"
+        style={{ 
+          left: cursorPosition.x, 
+          top: cursorPosition.y,
+          transform: isHovering ? 'scale(2)' : 'scale(1)'
+        }}
+      ></div>
+      <div 
+        className="fixed w-8 h-8 border-2 border-purple-500/50 rounded-full pointer-events-none z-[9998] transition-all duration-150"
+        style={{ 
+          left: cursorPosition.x - 15, 
+          top: cursorPosition.y - 15,
+          transform: isHovering ? 'scale(1.5)' : 'scale(1)'
+        }}
+      ></div>
 
-            {/* Step Indicators */}
-            <div className="space-y-8">
-              {steps.map((step, index) => {
-                const isActive = currentStep === step.number;
-                const isCompleted = currentStep > step.number;
-                const Icon = step.icon;
-                
-                return (
-                  <motion.div
-                    key={step.number}
-                    className={`flex items-center space-x-4 p-4 rounded-2xl transition-all duration-300 ${
-                      isActive 
-                        ? 'bg-white/10 backdrop-blur-sm border border-pink-500/30' 
-                        : isCompleted 
-                        ? 'bg-green-500/10 border border-green-500/30' 
-                        : 'bg-white/5 border border-white/10'
-                    }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                  >
-                    <motion.div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isActive 
-                          ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400' 
-                          : isCompleted 
-                          ? 'bg-green-500' 
-                          : 'bg-white/10'
-                      }`}
-                      animate={{
-                        scale: isActive ? [1, 1.1, 1] : 1,
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: isActive ? Infinity : 0,
-                      }}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle className="w-6 h-6 text-white" />
-                      ) : (
-                        <Icon className="w-6 h-6 text-white" />
-                      )}
-                    </motion.div>
-                    
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-400">Step {step.number}</div>
-                      <div className={`font-semibold ${
-                        isActive ? 'text-white' : isCompleted ? 'text-green-400' : 'text-gray-300'
-                      }`}>
-                        {step.title}
-                  </div>
+      {/* Main Container */}
+      <div className="pt-32 pb-20 px-12 max-w-6xl mx-auto">
+        {/* Progress Indicator */}
+        <div className="mb-12 text-center">
+          <div className="flex justify-center items-center gap-5 mb-8">
+            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                  step < currentStep ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white' :
+                  step === currentStep ? 'bg-purple-500 text-white scale-110 shadow-lg shadow-purple-500/50' :
+                  'bg-white/10 text-gray-400'
+                }`}>
+                  {step}
+                </div>
+                {step < 7 && (
+                  <div className={`w-15 h-0.5 mx-2.5 ${
+                    step < currentStep ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500' : 'bg-white/10'
+                  }`}></div>
+                )}
               </div>
-            </motion.div>
-                );
-              })}
-            </div>
+            ))}
           </div>
+          <h2 className="text-2xl font-bold mb-2.5">{stepInfo[currentStep as keyof typeof stepInfo]?.title}</h2>
+          <p className="text-gray-400">{stepInfo[currentStep as keyof typeof stepInfo]?.subtitle}</p>
         </div>
 
-        {/* Right Side - Current Step */}
-        <div className="flex-1 lg:w-1/2 p-6 lg:p-12 overflow-y-auto">
-          <div className="max-w-2xl mx-auto">
-            {/* Error Message */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-8 text-red-300 text-center"
-                >
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Step Content */}
-            <AnimatePresence mode="wait">
-              {currentStep === 1 && (
-                <EventTypeSelection
-                  key="step1"
-                  eventTypes={events.length > 0 ? events.map(event => ({
-                    id: event.category,
-                    name: event.name,
-                    icon: getEventIcon(event.category),
-                    description: event.description,
-                    gradient: getEventGradient(event.category),
-                    features: ['Full Planning', '500+ Vendors', 'Premium Service']
-                  })) : eventTypes}
-                  onSelect={handleEventTypeSelect}
-                  selectedType={selectedEventType}
-                />
-              )}
-
-              {currentStep === 2 && (
-                <EventDetailsForm
-                  key="step2"
-                  form={form}
-                  onSubmit={handleEventDetailsSubmit}
-                  onBack={() => setCurrentStep(1)}
-                  loading={loading}
-                  selectedEventType={selectedEventType}
-                />
-              )}
-
-              {currentStep === 3 && (
-                <ServiceSelection
-                  key="step3"
-                  eventId={selectedEventId!}
-                  onServicesSelected={handleServicesSelected}
-                  onBack={() => setCurrentStep(2)}
-                  onContinue={handleServicesContinue}
-                />
-              )}
-
-              {currentStep === 4 && (
-                <PackageSelection
-                  key="step4"
-                  packages={packages}
-                  onSelect={handlePackageConfirm}
-                  onPackageSelect={handlePackageSelect}
-                  onBack={() => setCurrentStep(3)}
-                  loading={loading}
-                  selectedPackage={selectedPackage}
-                />
-              )}
-
-              {currentStep === 5 && (
-                <ConfirmationStep
-                  key="step5"
-                  form={form}
-                  onSubmit={handleFinalSubmit}
-                  onBack={() => setCurrentStep(4)}
-                  loading={loading}
-                  selectedEventType={selectedEventType}
-                  selectedPackage={selectedPackage}
-                />
-              )}
-            </AnimatePresence>
+        {/* Step Content */}
+        <div className="bg-gradient-to-br from-white/5 to-white/2 border border-white/10 rounded-2xl p-10">
+          {/* Step 1: Event Type Selection */}
+          {currentStep === 1 && (
+            <div>
+              <h2 className="text-4xl font-black mb-2.5 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent">
+                What type of event are you planning?
+              </h2>
+              <p className="text-gray-400 mb-10 text-lg leading-relaxed">
+                Choose the category that best matches your celebration
+              </p>
+              
+              {loading ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="w-8 h-8 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                  <span className="ml-3 text-gray-400">Loading events...</span>
                 </div>
-              </div>
-          </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+                  {events.map((event) => (
+                    <div
+                      key={event.id}
+                      onClick={() => {
+                        updateFormData('eventType', event.name.toLowerCase());
+                        // Auto-route to next step after a short delay
+                        setTimeout(() => {
+                          nextStep();
+                        }, 300);
+                      }}
+                      className={`bg-white/3 border-2 rounded-2xl p-8 cursor-pointer transition-all text-center hover:-translate-y-1 hover:shadow-2xl hover:shadow-purple-500/20 ${
+                        formData.eventType === event.name.toLowerCase() 
+                          ? 'border-purple-500 bg-purple-500/10' 
+                          : 'border-white/10 hover:border-purple-500/50'
+                      }`}
+                    >
+                      <div className="text-5xl mb-5">{event.icon || '🎉'}</div>
+                      <div className="text-xl font-bold mb-2.5">{event.name}</div>
+                      <div className="text-gray-400 text-sm leading-relaxed">{event.description || 'Professional event planning services'}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+
+            </div>
+          )}
+
+                    {/* Step 2: Service Selection */}
+          {currentStep === 2 && (
+            <Step2ServiceSelection
+              selectedServices={formData.selectedServices}
+              onUpdateServices={(services) => updateFormData('selectedServices', services)}
+              onNext={nextStep}
+              onBack={prevStep}
+              eventServices={eventServices}
+            />
+          )}
+
+          {/* Step 3: Event Details */}
+          {currentStep === 3 && (
+            <Step3EventDetails
+              formData={{
+                eventLocation: formData.eventLocation,
+                eventDate: formData.eventDate,
+                guestCount: formData.guestCount,
+                budget: formData.budget,
+                additionalNotes: formData.additionalNotes
+              }}
+              onUpdateField={updateField}
+              onNext={nextStep}
+              onBack={prevStep}
+            />
+          )}
+
+          {/* Step 4: Package Selection */}
+              {currentStep === 4 && (
+            <Step4PackageSelection
+              selectedPackage={formData.selectedPackage}
+              onSelectPackage={(packageType) => updateFormData('selectedPackage', packageType)}
+              onNext={nextStep}
+              onBack={prevStep}
+              eventPackages={eventPackages}
+            />
+          )}
+
+                    {/* Step 5: Schedule Consultation */}
+              {currentStep === 5 && (
+            <Step5ScheduleConsultation
+              formData={{
+                scheduledDate: formData.scheduledDate,
+                scheduledTime: formData.scheduledTime,
+                callDuration: formData.callDuration,
+                flexibility: formData.flexibility
+              }}
+              onUpdateField={updateField}
+              onNext={nextStep}
+              onBack={prevStep}
+            />
+          )}
+
+          {/* Step 6: Contact Information */}
+              {currentStep === 6 && (
+            <Step6ContactInformation
+              formData={{
+                userName: formData.userName,
+                userPhone: formData.userPhone,
+                userEmail: formData.userEmail
+              }}
+              onUpdateField={updateField}
+              onNext={nextStep}
+              onBack={prevStep}
+            />
+          )}
+
+          {/* Step 7: Confirmation */}
+          {currentStep === 7 && (
+            <Step7Confirmation
+              formData={formData}
+              onSubmit={submitRequest}
+              onBack={prevStep}
+              isSubmitting={isSubmitting}
+            />
+          )}
+
+          {/* Step 8: Success */}
+          {currentStep === 8 && (
+            <Step8Success
+              formData={{
+                scheduledDate: formData.scheduledDate,
+                scheduledTime: formData.scheduledTime
+              }}
+              requestId={requestId}
+            />
+          )}
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes aurora {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

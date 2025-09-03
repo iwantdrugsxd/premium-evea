@@ -9,7 +9,7 @@ const supabase = createClient(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { event_id, location, date_time, budget, guest_count, additional_notes } = body;
+    const { event_id, location, date_time, budget, guest_count, additional_notes, selected_services } = body;
 
     // Validate required fields
     if (!event_id || !location || !date_time || !budget || !guest_count) {
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         budget,
         guest_count,
         additional_notes: additional_notes || null,
+        selected_services: selected_services || [],
         status: 'pending'
       })
       .select()

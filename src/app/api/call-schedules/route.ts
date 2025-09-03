@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     // Get event request details
-    const { data: eventRequest, error: eventError } = await supabase
+    const { data: eventRequests, error: eventError } = await supabase
       .from('event_planning_requests')
       .select(`
         *,
@@ -30,10 +31,9 @@ export async function POST(request: Request) {
           description
         )
       `)
-      .eq('id', event_request_id)
-      .single();
+      .eq('id', event_request_id);
 
-    if (eventError || !eventRequest) {
+    if (eventError) {
       console.error('❌ Error fetching event request:', eventError);
       console.error('📊 Error details:', {
         message: eventError?.message,
@@ -48,6 +48,16 @@ export async function POST(request: Request) {
         error: 'Event request not found'
       }, { status: 404 });
     }
+
+    if (!eventRequests || eventRequests.length === 0) {
+      console.error('❌ Event request not found:', event_request_id);
+      return NextResponse.json({
+        success: false,
+        error: 'Event request not found'
+      }, { status: 404 });
+    }
+
+    const eventRequest = eventRequests[0];
 
     // Get admin settings (should be only one)
     const { data: adminSettings, error: adminError } = await supabase
@@ -146,6 +156,13 @@ export async function POST(request: Request) {
         stack: emailError instanceof Error ? emailError.stack : undefined,
         timestamp: new Date().toISOString()
       });
+      
+      // Try simple email service as fallback
+      try {
+        await sendSimpleEmailNotification(eventRequest, callSchedule, adminSettings);
+      } catch (simpleEmailError) {
+        console.error('❌ Simple email service also failed:', simpleEmailError);
+      }
     }
 
     console.log('✅ Successfully scheduled consultation call:', {
@@ -230,180 +247,250 @@ export async function GET(request: Request) {
   }
 }
 
-async function sendEmailNotification(eventRequest: any, callSchedule: any, adminSettings: any) {
+async function sendSimpleEmailNotification(eventRequest: any, callSchedule: any, adminSettings: any) {
   try {
-    // Create professional HTML email for admin
-    const adminEmailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>New Event Planning Request - EVEA</title>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-          .section { margin-bottom: 25px; }
-          .section h3 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
-          .detail { margin: 10px 0; }
-          .label { font-weight: bold; color: #555; }
-          .value { color: #333; }
-          .highlight { background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; }
-          .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
-          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🎉 New Event Planning Request</h1>
-            <p>EVEA - Creating Unforgettable Moments</p>
-          </div>
-          
-          <div class="content">
-            <div class="section">
-              <h3>📋 Event Details</h3>
-              <div class="detail">
-                <span class="label">Event Type:</span>
-                <span class="value">${eventRequest.events.name}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Location:</span>
-                <span class="value">${eventRequest.location}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Event Date:</span>
-                <span class="value">${new Date(eventRequest.event_date).toLocaleDateString()}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Event Time:</span>
-                <span class="value">${new Date(eventRequest.event_date).toLocaleTimeString()}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Budget:</span>
-                <span class="value">₹${eventRequest.budget.toLocaleString()}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Guest Count:</span>
-                <span class="value">${eventRequest.guest_count}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Selected Package:</span>
-                <span class="value">${eventRequest.selected_package?.toUpperCase()}</span>
-              </div>
-              ${eventRequest.additional_notes ? `
-              <div class="detail">
-                <span class="label">Additional Notes:</span>
-                <span class="value">${eventRequest.additional_notes}</span>
-              </div>
-              ` : ''}
-            </div>
-
-            <div class="section">
-              <h3>👤 Customer Information</h3>
-              <div class="detail">
-                <span class="label">Email Address:</span>
-                <span class="value">${callSchedule.user_email}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Call Scheduled For:</span>
-                <span class="value">${new Date(callSchedule.scheduled_time).toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div class="section">
-              <h3>📞 Quick Actions</h3>
-              <div class="highlight">
-                <p><strong>Please contact the customer at the scheduled time.</strong></p>
-                <p>Email: <a href="mailto:${callSchedule.user_email}">${callSchedule.user_email}</a></p>
-                <p>Call: <a href="tel:${adminSettings.admin_whatsapp}">${adminSettings.admin_whatsapp}</a></p>
-              </div>
-            </div>
-
-            <div class="section">
-              <h3>📊 Request Summary</h3>
-              <div class="detail">
-                <span class="label">Request ID:</span>
-                <span class="value">#${eventRequest.id}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Submitted:</span>
-                <span class="value">${new Date(eventRequest.created_at).toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>This is an automated notification from EVEA Event Planning System</p>
-            <p>© 2024 EVEA. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Create plain text version
-    const adminEmailText = `
-🎉 NEW EVENT PLANNING REQUEST - EVEA
-
-EVENT DETAILS:
-━━━━━━━━━━━━━━━
-Event Type: ${eventRequest.events.name}
-Location: ${eventRequest.location}
-Event Date: ${new Date(eventRequest.event_date).toLocaleDateString()}
-Event Time: ${new Date(eventRequest.event_date).toLocaleTimeString()}
-Budget: ₹${eventRequest.budget.toLocaleString()}
-Guest Count: ${eventRequest.guest_count}
-Selected Package: ${eventRequest.selected_package?.toUpperCase()}
-${eventRequest.additional_notes ? `Additional Notes: ${eventRequest.additional_notes}` : ''}
-
-CUSTOMER INFORMATION:
-━━━━━━━━━━━━━━━
-Email Address: ${callSchedule.user_email}
-Call Scheduled For: ${new Date(callSchedule.scheduled_time).toLocaleString()}
-
-QUICK ACTIONS:
-━━━━━━━━━━━━━━━
-Please contact the customer at the scheduled time.
-Email: ${callSchedule.user_email}
-Call: ${adminSettings.admin_whatsapp}
-
-REQUEST SUMMARY:
-━━━━━━━━━━━━━━━
-Request ID: #${eventRequest.id}
-Submitted: ${new Date(eventRequest.created_at).toLocaleString()}
-
----
-EVEA - Creating Unforgettable Moments
-© 2024 EVEA. All rights reserved.
-    `;
-
-    // Use full URL for server-side fetch
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    console.log('📧 [CALL-SCHEDULES] Sending simple email notification...');
     
-    // Send email to admin
-    const response = await fetch(`${baseUrl}/api/email/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: adminSettings.admin_email,
-        subject: `🎉 New Event Planning Request - ${eventRequest.events.name}`,
-        html: adminEmailHtml,
-        text: adminEmailText
-      })
+    // Create transporter using Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || 'eveateam2025@gmail.com',
+        pass: process.env.EMAIL_PASS || ''
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to send email');
-    }
+    // Send simple email
+    const mailOptions = {
+      from: `"EVEA Event Planning" <${process.env.EMAIL_USER || 'eveateam2025@gmail.com'}>`,
+      to: adminSettings.admin_email,
+      subject: `🎉 New Event Planning Request - ${eventRequest.events.name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a1a; color: white; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #8B5CF6; text-align: center; margin-bottom: 30px;">🎉 New Event Planning Request</h2>
+          
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Event Details</h3>
+            <p><strong>Event Type:</strong> ${eventRequest.events.name}</p>
+            <p><strong>Location:</strong> ${eventRequest.location}</p>
+            <p><strong>Budget:</strong> ₹${eventRequest.budget.toLocaleString()}</p>
+            <p><strong>Guest Count:</strong> ${eventRequest.guest_count}</p>
+            <p><strong>User Email:</strong> ${callSchedule.user_email}</p>
+            <p><strong>Call Scheduled:</strong> ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+            <p style="color: #9CA3AF; font-size: 14px;">
+              This is an automated notification from EVEA's event planning system.
+            </p>
+          </div>
+        </div>
+      `,
+      text: `
+New Event Planning Request - ${eventRequest.events.name}
+Location: ${eventRequest.location}
+Budget: ₹${eventRequest.budget.toLocaleString()}
+Guest Count: ${eventRequest.guest_count}
+User Email: ${callSchedule.user_email}
+Call Scheduled: ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+      `
+    };
 
-    console.log('✅ Email notification sent to admin successfully');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Simple email notification sent successfully:', {
+      messageId: info.messageId,
+      response: info.response
+    });
   } catch (error) {
-    console.error('❌ Error in email notification:', error);
-    console.error('📊 Error details:', {
+    console.error('❌ Simple email notification failed:', error);
+    throw error;
+  }
+}
+
+async function sendEmailNotification(eventRequest: any, callSchedule: any, adminSettings: any) {
+  console.log('📧 [CALL-SCHEDULES] Starting email notification process...');
+  console.log('📧 [CALL-SCHEDULES] Event Request:', {
+    id: eventRequest.id,
+    event_id: eventRequest.event_id,
+    location: eventRequest.location,
+    budget: eventRequest.budget,
+    guest_count: eventRequest.guest_count,
+    events: eventRequest.events,
+    selected_services: eventRequest.selected_services
+  });
+  console.log('📧 [CALL-SCHEDULES] Call Schedule:', {
+    id: callSchedule.id,
+    scheduled_time: callSchedule.scheduled_time,
+    user_email: callSchedule.user_email,
+    status: callSchedule.status
+  });
+  console.log('📧 [CALL-SCHEDULES] Admin Settings:', {
+    admin_email: adminSettings.admin_email,
+    admin_whatsapp: adminSettings.admin_whatsapp
+  });
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    console.log('📧 [CALL-SCHEDULES] Base URL for email API:', baseUrl);
+    
+    // Fetch selected services details
+    let servicesHtml = '';
+    let servicesText = '';
+    
+    if (eventRequest.selected_services && eventRequest.selected_services.length > 0) {
+      console.log('📧 [CALL-SCHEDULES] Fetching selected services details...');
+      
+      const { data: services, error: servicesError } = await supabase
+        .from('event_services')
+        .select('service_name, category')
+        .in('id', eventRequest.selected_services);
+      
+      if (!servicesError && services && services.length > 0) {
+        console.log('📧 [CALL-SCHEDULES] Found services:', services);
+        
+        // Group services by category
+        const groupedServices = services.reduce((acc: any, service) => {
+          if (!acc[service.category]) {
+            acc[service.category] = [];
+          }
+          acc[service.category].push(service.service_name);
+          return acc;
+        }, {});
+        
+        // Create HTML for services
+        servicesHtml = `
+          <h3>🎯 Selected Services:</h3>
+          ${Object.entries(groupedServices).map(([category, serviceNames]) => `
+            <div style="margin-bottom: 15px;">
+              <h4 style="color: #8b5cf6; margin-bottom: 8px;">${category}</h4>
+              <ul style="margin: 0; padding-left: 20px;">
+                ${(serviceNames as string[]).map(name => `<li style="margin-bottom: 5px;">${name}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
+        `;
+        
+        // Create text for services
+        servicesText = `
+Selected Services:
+${Object.entries(groupedServices).map(([category, serviceNames]) => `
+${category}:
+${(serviceNames as string[]).map(name => `  • ${name}`).join('\n')}
+`).join('\n')}
+        `;
+      }
+    }
+    
+    const emailData = {
+      to: adminSettings.admin_email,
+      subject: `🎉 New Event Planning Request - ${eventRequest.events.name}`,
+      html: `
+        <h1>🎉 New Event Planning Request</h1>
+        <p><strong>Event Type:</strong> ${eventRequest.events.name}</p>
+        <p><strong>Location:</strong> ${eventRequest.location}</p>
+        <p><strong>Budget:</strong> ₹${eventRequest.budget.toLocaleString()}</p>
+        <p><strong>Guest Count:</strong> ${eventRequest.guest_count}</p>
+        <p><strong>Selected Package:</strong> ${eventRequest.selected_package || 'Not specified'}</p>
+        <p><strong>User Email:</strong> ${callSchedule.user_email}</p>
+        <p><strong>Call Scheduled:</strong> ${new Date(callSchedule.scheduled_time).toLocaleString()}</p>
+        <p><strong>Event Request ID:</strong> ${eventRequest.id}</p>
+        <p><strong>Call Schedule ID:</strong> ${callSchedule.id}</p>
+        ${servicesHtml}
+      `,
+      text: `
+New Event Planning Request - ${eventRequest.events.name}
+Location: ${eventRequest.location}
+Budget: ₹${eventRequest.budget.toLocaleString()}
+Guest Count: ${eventRequest.guest_count}
+Selected Package: ${eventRequest.selected_package || 'Not specified'}
+User Email: ${callSchedule.user_email}
+Call Scheduled: ${new Date(callSchedule.scheduled_time).toLocaleString()}
+Event Request ID: ${eventRequest.id}
+Call Schedule ID: ${callSchedule.id}
+${servicesText}
+      `
+    };
+
+    console.log('📧 [CALL-SCHEDULES] Email data prepared:', {
+      to: emailData.to,
+      subject: emailData.subject,
+      hasHtml: !!emailData.html,
+      hasText: !!emailData.text
+    });
+
+    console.log('📧 [CALL-SCHEDULES] Sending email using Nodemailer...');
+    
+    // Create transporter using Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || 'eveateam2025@gmail.com',
+        pass: process.env.EMAIL_PASS || ''
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+
+    // Send email
+    const mailOptions = {
+      from: `"EVEA Event Planning" <${process.env.EMAIL_USER || 'eveateam2025@gmail.com'}>`,
+      to: emailData.to,
+      subject: emailData.subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a1a; color: white; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #8B5CF6; text-align: center; margin-bottom: 30px;">🎉 New Event Planning Request</h2>
+          
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Event Details</h3>
+            <p><strong>Event Type:</strong> ${eventRequest.events.name}</p>
+            <p><strong>Location:</strong> ${eventRequest.location}</p>
+            <p><strong>Budget:</strong> ₹${eventRequest.budget.toLocaleString()}</p>
+            <p><strong>Guest Count:</strong> ${eventRequest.guest_count}</p>
+            <p><strong>Selected Package:</strong> ${eventRequest.selected_package || 'Not specified'}</p>
+          </div>
+          
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Contact Information</h3>
+            <p><strong>User Email:</strong> ${callSchedule.user_email}</p>
+            <p><strong>Call Scheduled:</strong> ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+            <p><strong>Event Request ID:</strong> ${eventRequest.id}</p>
+            <p><strong>Call Schedule ID:</strong> ${callSchedule.id}</p>
+          </div>
+          
+          ${servicesHtml ? `
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Selected Services</h3>
+            ${servicesHtml}
+          </div>
+          ` : ''}
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+            <p style="color: #9CA3AF; font-size: 14px;">
+              This is an automated notification from EVEA's event planning system.
+            </p>
+          </div>
+        </div>
+      `,
+      text: emailData.text
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ [CALL-SCHEDULES] Email notification sent successfully:', {
+      messageId: info.messageId,
+      response: info.response
+    });
+  } catch (error) {
+    console.error('❌ [CALL-SCHEDULES] Email notification failed:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString()

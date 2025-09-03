@@ -8,12 +8,10 @@ export async function POST(request: NextRequest) {
     
     // Extract form fields
     const name = formData.get('name') as string;
-    const categories = JSON.parse(formData.get('categories') as string);
+    const serviceCategories = JSON.parse(formData.get('serviceCategories') as string);
     const description = formData.get('description') as string;
     const location = formData.get('location') as string;
     const email = formData.get('email') as string;
-    const phone = formData.get('phone') as string;
-    const address = formData.get('address') as string;
     const services_offered = JSON.parse(formData.get('services_offered') as string);
     const experience = formData.get('experience') as string;
     const events_count = parseInt(formData.get('events_count') as string) || 0;
@@ -22,12 +20,10 @@ export async function POST(request: NextRequest) {
     // Log received data for debugging
     console.log('Received form data:', {
       name,
-      categories,
+      serviceCategories,
       description,
       location,
       email,
-      phone,
-      address,
       services_offered,
       experience,
       events_count,
@@ -39,7 +35,7 @@ export async function POST(request: NextRequest) {
     const portfolio_images = formData.getAll('portfolio_images') as File[];
 
     // Validate required fields
-    if (!name || !categories.length || !description || !location || !email || !phone || !address) {
+    if (!name || !serviceCategories.length || !description || !location || !email) {
       return NextResponse.json(
         { success: false, error: 'All required fields must be provided' },
         { status: 400 }
@@ -93,19 +89,24 @@ export async function POST(request: NextRequest) {
     // Insert vendor data into database - using only existing columns
     const vendorData = {
       name,
-      category: categories.join(', '), // Store as comma-separated string
+      category: serviceCategories.join(', '), // Store service types for filtering
       description,
       location,
       image: cover_image_url, // Use cover image as main image
-      features: services_offered, // Store services as features
+      features: [], // Empty array for features since we're not using them
       rating: 0,
       price: 'Contact for pricing', // Default value since price is required
       price_label: 'Custom Quote', // Default value since price_label is required
       response_time: 'Within 24 hours', // Default value
-      availability: 'Available', // Default value
-      team_size: '1-5', // Default value
+      availability: 'Available', // Default value for required field
+      team_size: '1-5', // Default value for required field
       experience: experience || 'Not specified', // Handle missing experience
-      badge: null,
+      badge: 'New', // Auto-assign "New" badge for new vendors
+      status: 'approved', // Auto-approve vendors for immediate marketplace display
+      email,
+      service_areas: service_areas,
+      services_offered: services_offered,
+      events_count: events_count,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

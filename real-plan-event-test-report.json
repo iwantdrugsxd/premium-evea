@@ -1,0 +1,35 @@
+{
+  "timestamp": "2025-08-30T10:00:49.253Z",
+  "adminEmail": "vnair0795@gmail.com",
+  "testResults": [
+    {
+      "test": "Server Connectivity",
+      "status": "PASSED",
+      "details": "Server is running and accessible"
+    },
+    {
+      "test": "Complete Plan Event Flow",
+      "status": "PASSED",
+      "details": "Flow completed successfully. Event Request: 18, Call Schedule: 10"
+    },
+    {
+      "test": "Email Sending - Admin Notification Email (Real)",
+      "status": "PASSED",
+      "details": "Email sent successfully via edge_function method to vnair0795@gmail.com"
+    },
+    {
+      "test": "Email Sending - User Confirmation Email (Real)",
+      "status": "PASSED",
+      "details": "Email sent successfully via edge_function method to vnair0795@gmail.com"
+    }
+  ],
+  "flowData": {
+    "eventRequestId": 18,
+    "callScheduleId": 10
+  },
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  }
+}

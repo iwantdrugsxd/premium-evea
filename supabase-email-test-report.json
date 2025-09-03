@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-08-30T09:37:25.565Z",
+  "environment": {
+    "nodeVersion": "v24.6.0",
+    "platform": "darwin",
+    "baseUrl": "http://localhost:3000",
+    "envVars": 6
+  },
+  "testResults": [
+    {
+      "test": "Supabase Email Setup",
+      "status": "PASSED",
+      "details": "Email service configuration checked"
+    },
+    {
+      "test": "Plan Event Flow - Logged-in User with Complete Profile",
+      "status": "PASSED",
+      "details": "Flow completed successfully: Event Type Selection → Event Details Form → Service Selection → Package Selection → Call Scheduling → Email Notification to Admin → Confirmation Page"
+    },
+    {
+      "test": "Plan Event Flow - Logged-in User with Incomplete Profile",
+      "status": "PASSED",
+      "details": "Flow completed successfully: Event Type Selection → Event Details Form → Service Selection → Package Selection → Call Scheduling → Email Notification to Admin → Redirect to Login → Redirect to Confirmation"
+    },
+    {
+      "test": "Plan Event Flow - Non-Logged-in User",
+      "status": "PASSED",
+      "details": "Flow completed successfully: Event Type Selection → Event Details Form → Service Selection → Package Selection → Call Scheduling → Email Notification to Admin → Redirect to Login → Redirect to Confirmation"
+    },
+    {
+      "test": "Email Sending - Admin Notification Email",
+      "status": "PASSED",
+      "details": "API: SUCCESS, Edge: SUCCESS"
+    },
+    {
+      "test": "Email Sending - User Confirmation Email",
+      "status": "PASSED",
+      "details": "API: SUCCESS, Edge: SUCCESS"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

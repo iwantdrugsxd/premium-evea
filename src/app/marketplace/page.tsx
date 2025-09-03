@@ -33,13 +33,13 @@ export default function MarketplacePage() {
     badge: string;
     image: string;
     description: string;
-    features: string[];
     location: string;
     experience: string;
-    teamSize: string;
-    availability: string;
+    email?: string;
+    serviceAreas?: string[];
+    servicesOffered?: string[];
     reviews: Array<{name: string; rating: number; comment: string}>;
-    portfolio: Array<{id: number; name: string; url: string}>;
+    portfolio: Array<{id: number; title: string; description: string; image_url: string; category: string}>;
   } | null>(null);
   const [showVendorDetails, setShowVendorDetails] = useState(false);
   const [cart, setCart] = useState<Array<{
@@ -64,20 +64,21 @@ export default function MarketplacePage() {
     badge: string;
     image: string;
     description: string;
-    features: string[];
     location: string;
     experience: string;
-    teamSize: string;
-    availability: string;
+    email?: string;
+    serviceAreas?: string[];
+    servicesOffered?: string[];
     reviews: Array<{name: string; rating: number; comment: string}>;
-    portfolio: Array<{id: number; name: string; url: string}>;
+    portfolio: Array<{id: number; title: string; description: string; image_url: string; category: string}>;
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const filters = [
-    'All Vendors', 'Catering', 'Photography', 'Decoration', 
-    'Entertainment', 'Venues', 'Transportation', 'Florists'
+    'All Vendors', 'Photography & Videography', 'Catering & Food Services', 'Decoration & Florist', 
+    'Music & Entertainment', 'Venues & Locations', 'Transportation & Logistics', 'Wedding Planning',
+    'Corporate Events', 'Birthday & Celebrations', 'Lighting & Sound', 'Security Services'
   ];
 
   // Filter vendors based on active filter and search query
@@ -98,51 +99,11 @@ export default function MarketplacePage() {
     const fetchVendors = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/vendors');
+        const response = await fetch('/api/marketplace');
         const result = await response.json();
         
         if (result.success) {
-          // Transform the data to match the expected format
-          const transformedVendors = result.vendors.map((vendor: {
-            id: number;
-            name: string;
-            category: string;
-            rating?: number;
-            events_count?: number;
-            price?: string;
-            price_label?: string;
-            response_time?: string;
-            badge?: string;
-            image?: string;
-            description: string;
-            features?: string[];
-            location: string;
-            experience?: string;
-            team_size?: string;
-            availability?: string;
-            vendor_reviews?: Array<{name: string; rating: number; comment: string}>;
-            vendor_portfolio?: Array<{id: number; name: string; url: string}>;
-          }) => ({
-            id: vendor.id,
-            name: vendor.name,
-            category: vendor.category,
-            rating: vendor.rating || 0,
-            events: vendor.events_count || 0,
-            price: vendor.price || 'Contact for pricing',
-            priceLabel: vendor.price_label || 'Custom Quote',
-            responseTime: vendor.response_time || 'Within 24 hours',
-            badge: vendor.badge || 'New',
-            image: vendor.image || 'default',
-            description: vendor.description,
-            features: vendor.features || [],
-            location: vendor.location,
-            experience: vendor.experience || 'Not specified',
-            teamSize: vendor.team_size || '1-5 people',
-            availability: vendor.availability || 'Available',
-            reviews: vendor.vendor_reviews || [],
-            portfolio: vendor.vendor_portfolio || []
-          }));
-          setVendors(transformedVendors);
+          setVendors(result.vendors);
         } else {
           setError(result.error || 'Failed to fetch vendors');
         }
@@ -472,6 +433,16 @@ export default function MarketplacePage() {
                 >
                   {/* Vendor Image */}
                   <div className="h-48 bg-gradient-to-br from-purple-500/20 to-pink-500/20 relative overflow-hidden">
+                    {vendor.image && vendor.image !== 'default' ? (
+                      <img 
+                        src={vendor.image} 
+                        alt={vendor.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : null}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50"></div>
                     <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-yellow-400 font-semibold">
                       {vendor.badge}
@@ -571,12 +542,23 @@ export default function MarketplacePage() {
                     <h2 className="text-3xl font-bold mb-2">{selectedVendor.name}</h2>
                     <p className="text-gray-400">{selectedVendor.category}</p>
                   </div>
-                  <button
-                    onClick={() => setShowVendorDetails(false)}
-                    className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        addToCart(selectedVendor);
+                        setShowVendorDetails(false);
+                      }}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all"
+                    >
+                      Add to Package
+                    </button>
+                    <button
+                      onClick={() => setShowVendorDetails(false)}
+                      className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8 mb-8">
@@ -594,65 +576,98 @@ export default function MarketplacePage() {
                         <span className="text-white">{selectedVendor.experience}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Team Size:</span>
-                        <span className="text-white">{selectedVendor.teamSize}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Availability:</span>
-                        <span className="text-white">{selectedVendor.availability}</span>
+                        <span className="text-gray-400">Email:</span>
+                        <span className="text-white">{selectedVendor.email}</span>
                       </div>
                     </div>
+
+                    {selectedVendor.serviceAreas && selectedVendor.serviceAreas.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="text-lg font-semibold mb-3">Service Areas</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedVendor.serviceAreas.map((area: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-sm text-purple-300">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedVendor.servicesOffered && selectedVendor.servicesOffered.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="text-lg font-semibold mb-3">Services Offered</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedVendor.servicesOffered.map((service: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-pink-500/20 border border-pink-500/30 rounded-full text-sm text-pink-300">
+                              {service}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <h3 className="text-xl font-bold mb-4">Features</h3>
-                    <div className="space-y-3">
-                      {selectedVendor.features.map((feature: string, index: number) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-green-400" />
-                          <span className="text-gray-300">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-8 p-6 bg-white/5 rounded-2xl">
-                      <div className="text-center mb-4">
-                        <div className="text-3xl font-bold text-purple-500">{selectedVendor.price}</div>
-                        <div className="text-gray-400">{selectedVendor.priceLabel}</div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          addToCart(selectedVendor);
-                          setShowVendorDetails(false);
-                        }}
-                        className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all"
-                      >
-                        Add to Package
-                      </button>
-                    </div>
+                  <div className="mt-8 p-6 bg-white/5 rounded-2xl">
+                    <h3 className="text-xl font-bold mb-4">Business Description</h3>
+                    <p className="text-gray-300 leading-relaxed">{selectedVendor.description}</p>
                   </div>
                 </div>
 
+                {/* Portfolio Section */}
+                {selectedVendor.portfolio && selectedVendor.portfolio.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-bold mb-4">Portfolio</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {selectedVendor.portfolio.map((item: {id: number; title: string; description: string; image_url: string; category: string}, index: number) => (
+                        <div key={item.id || index} className="bg-white/5 rounded-xl overflow-hidden">
+                          <img 
+                            src={item.image_url} 
+                            alt={item.title}
+                            className="w-full h-32 object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzM0MTU1Ii8+CjxwYXRoIGQ9Ik02MCAxMDBMMTAwIDYwTDE0MCAxMDBMMTAwIDE0MEw2MCAxMDBaIiBmaWxsPSIjOTMzM0VBIi8+Cjwvc3ZnPgo=';
+                            }}
+                          />
+                          <div className="p-3">
+                            <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                            <p className="text-xs text-gray-400">{item.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews Section */}
                 <div>
                   <h3 className="text-xl font-bold mb-4">Reviews</h3>
-                  <div className="space-y-4">
-                    {selectedVendor.reviews.map((review: {name: string; rating: number; comment: string}, index: number) => (
-                      <div key={index} className="bg-white/5 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                className={`w-4 h-4 ${i < review.rating ? 'fill-current' : ''}`} 
-                              />
-                            ))}
+                  {selectedVendor.reviews && selectedVendor.reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedVendor.reviews.map((review: {name: string; rating: number; comment: string}, index: number) => (
+                        <div key={index} className="bg-white/5 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex text-yellow-400">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`w-4 h-4 ${i < review.rating ? 'fill-current' : ''}`} 
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-400">{review.name}</span>
                           </div>
-                          <span className="text-sm text-gray-400">{review.name}</span>
+                          <p className="text-gray-300">{review.comment}</p>
                         </div>
-                        <p className="text-gray-300">{review.comment}</p>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-white/5 rounded-xl">
+                      <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-400">No reviews yet</p>
+                      <p className="text-sm text-gray-500">Be the first to review this vendor</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

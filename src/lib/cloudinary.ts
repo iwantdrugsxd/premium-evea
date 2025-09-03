@@ -21,14 +21,16 @@ export async function uploadImage(file: File): Promise<string> {
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(dataURI, {
       folder: 'evea-vendors',
-      resource_type: 'auto',
+      resource_type: 'image',
       transformation: [
         { width: 1200, height: 600, crop: 'fill', quality: 'auto' },
         { fetch_format: 'auto' }
       ]
     });
 
-    return result.secure_url;
+    // Ensure we get the transformed image URL, not the raw upload URL
+    const transformedUrl = result.secure_url.replace('/raw/upload/', '/image/upload/');
+    return transformedUrl;
   } catch (error) {
     console.error('Cloudinary upload error:', error);
     throw new Error('Failed to upload image');

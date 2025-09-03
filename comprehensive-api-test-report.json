@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-08-30T10:47:50.414Z",
+  "adminEmail": "vnair0795@gmail.com",
+  "testResults": [
+    {
+      "test": "Server Connectivity",
+      "status": "PASSED",
+      "details": "Server is running and accessible"
+    },
+    {
+      "test": "API - Events API",
+      "status": "PASSED",
+      "details": "Fetch available events - Accessible"
+    },
+    {
+      "test": "API - Event Requests API",
+      "status": "PASSED",
+      "details": "Create event request - Accessible"
+    },
+    {
+      "test": "API - Package Recommendations API",
+      "status": "PASSED",
+      "details": "Get package recommendations - Accessible"
+    },
+    {
+      "test": "API - Email Send API",
+      "status": "PASSED",
+      "details": "Send test email - Accessible"
+    },
+    {
+      "test": "API - Debug Users API",
+      "status": "PASSED",
+      "details": "Debug users endpoint - Accessible"
+    },
+    {
+      "test": "API - Debug Vendors API",
+      "status": "PASSED",
+      "details": "Debug vendors endpoint - Accessible"
+    },
+    {
+      "test": "Complete Plan Event Flow",
+      "status": "PASSED",
+      "details": "Flow completed successfully. Event Request: 22, Call Schedule: 12"
+    },
+    {
+      "test": "Email Sending - Admin Notification Email (Real)",
+      "status": "PASSED",
+      "details": "Email sent successfully via nodemailer method to vnair0795@gmail.com"
+    },
+    {
+      "test": "Email Sending - User Confirmation Email (Real)",
+      "status": "PASSED",
+      "details": "Email sent successfully via nodemailer method to vnair0795@gmail.com"
+    },
+    {
+      "test": "Email Sending - Simple Test Email",
+      "status": "PASSED",
+      "details": "Email sent successfully via nodemailer method to vnair0795@gmail.com"
+    }
+  ],
+  "flowData": {
+    "eventRequestId": 22,
+    "callScheduleId": 12
+  },
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "partial": 0
+  }
+}
