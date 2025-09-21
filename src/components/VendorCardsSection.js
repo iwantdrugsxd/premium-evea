@@ -453,6 +453,9 @@ export default function VendorCardsSection() {
               Vendors
             </span>
           </h2>
+          <p className="text-lg text-purple-300 mb-4 font-semibold">
+            ✨ Updated and improved design
+          </p>
           <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed font-medium">
             Discover our curated selection of verified vendors. Each partner is handpicked for their excellence, reliability, and commitment to delivering exceptional experiences.
           </p>
