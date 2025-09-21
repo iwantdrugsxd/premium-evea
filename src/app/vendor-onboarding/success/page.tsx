@@ -93,10 +93,10 @@ export default function VendorOnboardingSuccessPage() {
               </button>
               
               <button
-                onClick={() => router.push('/marketplace')}
+                onClick={() => router.push('/plan-event')}
                 className="flex-1 py-4 px-8 border-2 border-white/10 rounded-xl text-white hover:border-purple-500 transition-all"
               >
-                Browse Marketplace
+                Plan Your Event
               </button>
             </motion.div>
           </motion.div>

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=google_auth_failed', request.url))
     }
 
-    // Set JWT token in cookie and localStorage
+    // Set JWT token in cookie and redirect to plan event
     const response = NextResponse.redirect(new URL('/plan-event', request.url))
     response.cookies.set('authToken', result.token, {
       httpOnly: true,
@@ -73,20 +73,95 @@ export async function GET(request: NextRequest) {
       <html>
         <head>
           <title>Authentication Successful</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+            }
+            .container {
+              text-align: center;
+              background: rgba(255, 255, 255, 0.1);
+              backdrop-filter: blur(10px);
+              border-radius: 20px;
+              padding: 40px;
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .success-icon {
+              width: 60px;
+              height: 60px;
+              background: #4CAF50;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 20px;
+              animation: pulse 2s infinite;
+            }
+            .checkmark {
+              color: white;
+              font-size: 24px;
+              font-weight: bold;
+            }
+            h2 {
+              color: white;
+              margin: 0 0 10px 0;
+              font-size: 28px;
+              font-weight: 600;
+            }
+            p {
+              color: rgba(255, 255, 255, 0.8);
+              margin: 0 0 30px 0;
+              font-size: 16px;
+            }
+            .spinner {
+              width: 30px;
+              height: 30px;
+              border: 3px solid rgba(255, 255, 255, 0.3);
+              border-top: 3px solid white;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+              margin: 0 auto;
+            }
+            @keyframes pulse {
+              0% { transform: scale(1); }
+              50% { transform: scale(1.05); }
+              100% { transform: scale(1); }
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
         </head>
         <body>
-          <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-            <h2>Authentication Successful!</h2>
-            <p>Redirecting to event planning...</p>
+          <div class="container">
+            <div class="success-icon">
+              <div class="checkmark">✓</div>
+            </div>
+            <h2>Welcome to EVEA!</h2>
+            <p>Authentication successful. Redirecting to event planning...</p>
+            <div class="spinner"></div>
           </div>
           <script>
             try {
+              // Store authentication data
               localStorage.setItem('authToken', '${result.token}');
               localStorage.setItem('userData', '${JSON.stringify(result.user)}');
-              console.log('User data stored:', ${JSON.stringify(result.user)});
-              window.location.href = '/plan-event';
+              console.log('✅ User authenticated:', ${JSON.stringify(result.user)});
+              
+              // Redirect to plan event page
+              setTimeout(() => {
+                window.location.href = '/plan-event';
+              }, 2000);
             } catch (error) {
-              console.error('Error storing user data:', error);
+              console.error('❌ Error storing user data:', error);
               window.location.href = '/login?error=storage_failed';
             }
           </script>

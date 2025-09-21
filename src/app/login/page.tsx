@@ -40,8 +40,8 @@ export default function LoginPage() {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('userData', JSON.stringify(data.user));
         
-        // Redirect to marketplace
-        window.location.href = '/marketplace';
+        // Redirect to plan event
+        window.location.href = '/plan-event';
       } else {
         const errorMessage = data.error || 'Login failed';
         alert(`Login failed: ${errorMessage}`);
@@ -59,18 +59,24 @@ export default function LoginPage() {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     
     if (!googleClientId) {
-      alert('Google OAuth not configured. Please set up Google Client ID.');
+      alert('Google OAuth not configured. Please contact support or try again later.');
+      console.error('Google Client ID not found in environment variables');
       return;
     }
     
+    // Construct the redirect URI
+    const redirectUri = `${window.location.origin}/api/auth/google/callback`;
+    
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${googleClientId}&` +
-      `redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/google/callback')}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `response_type=code&` +
       `scope=openid email profile&` +
       `access_type=offline&` +
-      `prompt=consent`;
+      `prompt=consent&` +
+      `state=${encodeURIComponent(window.location.origin)}`;
     
+    console.log('Redirecting to Google OAuth:', googleAuthUrl);
     window.location.href = googleAuthUrl;
   };
 
