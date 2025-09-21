@@ -432,7 +432,7 @@ export default function VendorCardsSection() {
   };
 
   return (
-    <section className="py-32 px-6 lg:px-8 relative">
+    <section className="py-32 px-6 lg:px-8 relative" data-section="vendors">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto">

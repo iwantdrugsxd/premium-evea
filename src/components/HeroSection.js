@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sphere, MeshDistortMaterial, OrbitControls, Environment, Stars } from '@react-three/drei';
 import { ArrowRight, Phone, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // 3D Crystal Component
 function Crystal() {
@@ -127,7 +128,7 @@ function AnimatedHeadline() {
 }
 
 // Enhanced Button Component
-function EnhancedButton({ children, variant = 'primary', ...props }) {
+function EnhancedButton({ children, variant = 'primary', onClick, ...props }) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -140,6 +141,7 @@ function EnhancedButton({ children, variant = 'primary', ...props }) {
         transition: { duration: 0.2 }
       }}
       whileTap={{ scale: 0.95 }}
+      onClick={onClick}
       className={`
         relative px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300
         ${variant === 'primary' 
@@ -171,6 +173,19 @@ function EnhancedButton({ children, variant = 'primary', ...props }) {
 
 export default function HeroSection() {
   const containerRef = useRef();
+  const router = useRouter();
+
+  const handleStartPlanning = () => {
+    router.push('/plan-event');
+  };
+
+  const handleExploreMarketplace = () => {
+    // Since we removed the marketplace page, we can scroll to the vendor section
+    const vendorSection = document.querySelector('[data-section="vendors"]');
+    if (vendorSection) {
+      vendorSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <section 
@@ -237,12 +252,12 @@ export default function HeroSection() {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
           >
-            <EnhancedButton variant="primary">
+            <EnhancedButton variant="primary" onClick={handleStartPlanning}>
               Start Planning Your Event
               <ArrowRight className="w-4 h-4" />
             </EnhancedButton>
             
-            <EnhancedButton variant="secondary">
+            <EnhancedButton variant="secondary" onClick={handleExploreMarketplace}>
               Explore Marketplace
             </EnhancedButton>
           </motion.div>
