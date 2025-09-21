@@ -20,15 +20,7 @@ export async function GET(
 
     const { data: comments, error } = await supabase
       .from('story_comments')
-      .select(`
-        *,
-        user:user_id (
-          id,
-          email,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('story_id', storyId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -85,15 +77,7 @@ export async function POST(
         content,
         created_at: new Date().toISOString()
       })
-      .select(`
-        *,
-        user:user_id (
-          id,
-          email,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single();
 
     if (error) throw error;

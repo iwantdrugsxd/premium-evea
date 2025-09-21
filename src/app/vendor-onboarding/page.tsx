@@ -11,6 +11,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function VendorOnboardingPage() {
   const router = useRouter();
@@ -162,18 +163,6 @@ export default function VendorOnboardingPage() {
         submitFormData.append('portfolio_images', file);
       });
       
-      // Log form data before submission
-      console.log('Submitting form data:', {
-        name: formData.name,
-        serviceCategories: formData.serviceCategories,
-        description: formData.description,
-        location: formData.location,
-        email: formData.email,
-        services_offered: formData.services_offered,
-        experience: formData.experience,
-        events_count: formData.events_count,
-        service_areas: formData.service_areas
-      });
 
       // Submit to API
       const response = await fetch('/api/vendors', {
@@ -226,16 +215,17 @@ export default function VendorOnboardingPage() {
   ];
 
   return (
-    <div className="min-h-screen">
-      {/* Background */}
-      <div className="gradient-bg"></div>
+    <AuthGuard formName="Vendor Onboarding">
+      <div className="min-h-screen pt-24">
+        {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-900/20 to-black"></div>
       
       {/* Header */}
-      <div className="pt-8 px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative z-10 pt-16 px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-12"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Careers
@@ -245,13 +235,16 @@ export default function VendorOnboardingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <h1 className="text-4xl md:text-6xl font-black mb-4">
-              Join Our <span className="gradient-text">Vendor Network</span>
+            <h1 className="text-6xl md:text-8xl font-black mb-8 leading-tight">
+              <span className="text-white">Join Our</span>{' '}
+              <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+                Vendor Network
+              </span>
             </h1>
-            <p className="text-xl text-gray-400">
-              Showcase your services to thousands of event planners
+            <p className="text-2xl text-white/80 max-w-3xl mx-auto leading-relaxed">
+              Showcase your services to thousands of event planners and grow your business
             </p>
           </motion.div>
 
@@ -649,5 +642,6 @@ export default function VendorOnboardingPage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

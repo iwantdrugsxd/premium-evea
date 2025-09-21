@@ -146,9 +146,11 @@ export async function POST(request: Request) {
       });
     }
 
-    // Send email notification to admin
+    // Send email notification to admin and vnair0795@gmail.com
     try {
       await sendEmailNotification(eventRequest, callSchedule, adminSettings);
+      // Also send to vnair0795@gmail.com with cart details
+      await sendCartDetailsEmail(eventRequest, callSchedule);
     } catch (emailError) {
       console.error('❌ Error sending email notification:', emailError);
       console.error('📊 Error details:', {
@@ -160,6 +162,7 @@ export async function POST(request: Request) {
       // Try simple email service as fallback
       try {
         await sendSimpleEmailNotification(eventRequest, callSchedule, adminSettings);
+        await sendCartDetailsEmail(eventRequest, callSchedule);
       } catch (simpleEmailError) {
         console.error('❌ Simple email service also failed:', simpleEmailError);
       }
@@ -491,6 +494,141 @@ ${servicesText}
     });
   } catch (error) {
     console.error('❌ [CALL-SCHEDULES] Email notification failed:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+}
+
+// Send cart details email to vnair0795@gmail.com
+async function sendCartDetailsEmail(eventRequest: any, callSchedule: any) {
+  try {
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    // Format selected services as cart items
+    const cartItems = eventRequest.selected_services.map((service: string) => {
+      const serviceMap: { [key: string]: string } = {
+        'venue': 'Venue Booking',
+        'coordination': 'Event Coordination',
+        'catering': 'Catering Services',
+        'photography': 'Photography & Videography',
+        'decoration': 'Decoration & Styling',
+        'music': 'Music & Entertainment',
+        'transportation': 'Transportation',
+        'invitations': 'Invitations & Stationery',
+        'livestream': 'Live Streaming',
+        'security': 'Security Services',
+        'guest-mgmt': 'Guest Management',
+        'branding': 'Custom Branding',
+        'valet': 'Valet Parking'
+      };
+      return serviceMap[service] || service;
+    });
+
+    const cartItemsHtml = cartItems.map((item: string, index: number) => 
+      `<li class="cart-item">${index + 1}. ${item}</li>`
+    ).join('');
+
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: 'vnair0795@gmail.com',
+      subject: `🎉 New Event Planning Request - Cart Details & Call Scheduled`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a1a; color: white; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #8B5CF6; text-align: center; margin-bottom: 30px;">🎉 New Event Planning Request</h2>
+          
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Event Details</h3>
+            <p><strong>Event Type:</strong> ${eventRequest.events.name}</p>
+            <p><strong>Location:</strong> ${eventRequest.location}</p>
+            <p><strong>Budget:</strong> ₹${eventRequest.budget.toLocaleString()}</p>
+            <p><strong>Guest Count:</strong> ${eventRequest.guest_count}</p>
+            <p><strong>User Email:</strong> ${callSchedule.user_email}</p>
+            <p><strong>Call Scheduled:</strong> ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+            <p><strong>Request ID:</strong> ${eventRequest.id}</p>
+          </div>
+
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Cart Items (Selected Services)</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              ${cartItemsHtml}
+            </ul>
+            <p style="margin-top: 15px; color: #9CA3AF; font-size: 14px;">
+              <strong>Total Services:</strong> ${cartItems.length} services selected
+            </p>
+          </div>
+
+          <div style="background: #2a2a2a; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #EC4899; margin-top: 0;">Call Schedule Details</h3>
+            <p><strong>Scheduled Time:</strong> ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { 
+              timeZone: 'Asia/Kolkata',
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            })}</p>
+            <p><strong>Call Status:</strong> ${callSchedule.status}</p>
+            <p><strong>User Contact:</strong> ${callSchedule.user_email}</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+            <p style="color: #9CA3AF; font-size: 14px;">
+              This is an automated notification from EVEA's event planning system.
+            </p>
+          </div>
+        </div>
+      `,
+      text: `
+New Event Planning Request - Cart Details & Call Scheduled
+
+Event Details:
+- Event Type: ${eventRequest.events.name}
+- Location: ${eventRequest.location}
+- Budget: ₹${eventRequest.budget.toLocaleString()}
+- Guest Count: ${eventRequest.guest_count}
+- User Email: ${callSchedule.user_email}
+- Call Scheduled: ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+- Request ID: ${eventRequest.id}
+
+Cart Items (Selected Services):
+${cartItems.map((item: string, index: number) => `${index + 1}. ${item}`).join('\n')}
+
+Total Services: ${cartItems.length} services selected
+
+Call Schedule Details:
+- Scheduled Time: ${new Date(callSchedule.scheduled_time).toLocaleString('en-IN', { 
+  timeZone: 'Asia/Kolkata',
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true
+})}
+- Call Status: ${callSchedule.status}
+- User Contact: ${callSchedule.user_email}
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ [CALL-SCHEDULES] Cart details email sent successfully to vnair0795@gmail.com:', {
+      messageId: info.messageId,
+      response: info.response
+    });
+  } catch (error) {
+    console.error('❌ [CALL-SCHEDULES] Cart details email failed:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString()

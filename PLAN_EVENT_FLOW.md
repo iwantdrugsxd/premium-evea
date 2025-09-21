@@ -7,10 +7,10 @@ Complete end-to-end documentation for the Plan Event feature, covering user jour
 1. Open `/plan-event`
 2. Step 1: Choose event type
 3. Step 2: Select desired services
-4. Step 3: Choose a package (Basic/Professional/Premium)
-5. Step 4: Enter event details (location, budget, guests, notes)
-6. Step 5: Schedule preferred date/time
-7. Step 6: Share contact details and submit
+4. Step 3: Enter event details (location, budget, guests, notes)
+5. Step 4: Choose a package (Basic/Professional/Premium)
+6. Step 5: Schedule preferred date/time for call by evea partners for giving qoutation and fine tuning the requirements
+7. Step 6: Share contact details and email and submit
 8. Email sent to admin; request saved; status updated on scheduling
 
 ## 🎨 Frontend (orchestrator + components)

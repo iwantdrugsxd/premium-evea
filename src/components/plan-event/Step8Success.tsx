@@ -6,9 +6,10 @@ interface Step8Props {
     scheduledTime: string;
   };
   requestId: string;
+  userName?: string;
 }
 
-export default function Step8Success({ formData, requestId }: Step8Props) {
+export default function Step8Success({ formData, requestId, userName }: Step8Props) {
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
@@ -36,12 +37,22 @@ export default function Step8Success({ formData, requestId }: Step8Props) {
           ✓
         </div>
         <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent">
-          Request Submitted Successfully!
+          {userName ? `Thank you, ${userName}!` : 'Request Submitted Successfully!'}
         </h2>
         <p className="text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto mb-10">
-          Thank you for choosing EVEA! Your event planning request has been received. 
-          <br /><br />
-          <span className="text-purple-400 font-semibold">The EVEA team will contact you at your scheduled time</span> to discuss your requirements and provide a detailed quote.
+          {userName ? (
+            <>
+              Thank you for choosing EVEA, {userName}! Your event planning request has been received and our team is excited to help you create an unforgettable experience.
+              <br /><br />
+              <span className="text-purple-400 font-semibold">We'll contact you at your scheduled time</span> to discuss your requirements and provide a detailed quote.
+            </>
+          ) : (
+            <>
+              Thank you for choosing EVEA! Your event planning request has been received. 
+              <br /><br />
+              <span className="text-purple-400 font-semibold">The EVEA team will contact you at your scheduled time</span> to discuss your requirements and provide a detailed quote.
+            </>
+          )}
         </p>
       </div>
 

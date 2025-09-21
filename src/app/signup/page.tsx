@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import OTPVerification from '@/components/OTPVerification';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,8 @@ export default function SignupPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -25,9 +28,39 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSendingOTP(true);
+    
+    try {
+      // First, send OTP for email verification
+      const otpResponse = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const otpData = await otpResponse.json();
+
+      if (otpResponse.ok) {
+        setShowOTPVerification(true);
+      } else {
+        const errorMessage = otpData.error || 'Failed to send verification code';
+        alert(`Failed to send verification code: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('OTP sending error:', error);
+      alert('Failed to send verification code. Please try again.');
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  const handleOTPVerified = async () => {
     setIsLoading(true);
     
     try {
+      // Now create the account after email verification
       const response = await fetch('/api/auth/passport-signup', {
         method: 'POST',
         headers: {
@@ -45,19 +78,56 @@ export default function SignupPage() {
       } else {
         const errorMessage = data.error || 'Signup failed';
         alert(`Signup failed: ${errorMessage}`);
+        setShowOTPVerification(false);
       }
     } catch (error) {
       console.error('Signup error:', error);
       alert('Signup failed. Please try again.');
+      setShowOTPVerification(false);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleResendOTP = async () => {
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error || 'Failed to resend verification code';
+        alert(`Failed to resend verification code: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('OTP resend error:', error);
+      alert('Failed to resend verification code. Please try again.');
+    }
+  };
+
   const handleGoogleSignup = () => {
     // TODO: Implement Google OAuth
-    console.log('Google signup clicked');
   };
+
+  // Show OTP verification if email verification is in progress
+  if (showOTPVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative px-6 lg:px-8">
+        <OTPVerification
+          email={formData.email}
+          onVerified={handleOTPVerified}
+          onBack={() => setShowOTPVerification(false)}
+          onResend={handleResendOTP}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative px-6 lg:px-8">
@@ -213,12 +283,17 @@ export default function SignupPage() {
             {/* Signup Button */}
             <motion.button
               type="submit"
-              disabled={isLoading}
+              disabled={isSendingOTP || isLoading}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-pink-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isLoading ? (
+              {isSendingOTP ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Sending verification code...
+                </>
+              ) : isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Creating account...

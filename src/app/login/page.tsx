@@ -75,7 +75,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative px-6 lg:px-8">
+    <div className="min-h-screen bg-black flex items-center justify-center relative px-6 lg:px-8 pt-24">
       <div className="max-w-md w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -90,11 +90,6 @@ export default function LoginPage() {
             </Link>
             <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-gray-400">Sign in to your account to continue</p>
-            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-sm text-blue-300 mb-2">Test Credentials:</p>
-              <p className="text-xs text-blue-400">Email: john@example.com</p>
-              <p className="text-xs text-blue-400">Password: password</p>
-            </div>
           </div>
 
           {/* Login Form */}

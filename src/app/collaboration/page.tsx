@@ -11,6 +11,7 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function CollaborationPage() {
   const router = useRouter();
@@ -119,9 +120,13 @@ export default function CollaborationPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center relative px-6 lg:px-8">
+    <AuthGuard formName="Collaboration">
+      <div className="min-h-screen pt-24">
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-900/20 to-black"></div>
+        
+        {/* Hero Section */}
+      <section className="relative z-10 min-h-screen flex items-center justify-center px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Section - Content */}
@@ -362,5 +367,6 @@ export default function CollaborationPage() {
         </div>
       </section>
     </div>
+    </AuthGuard>
   );
 }

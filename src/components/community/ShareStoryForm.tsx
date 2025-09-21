@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface ShareStoryFormProps {
@@ -21,6 +21,25 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Monitor image state changes
+  useEffect(() => {
+    // Image state monitoring removed for production
+  }, [formData.images]);
+
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      formData.images.forEach(image => {
+        if (image instanceof File) {
+          const url = URL.createObjectURL(image);
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, []);
 
   const eventTypes = [
     'Wedding', 'Birthday Party', 'Corporate Event', 'Anniversary',
@@ -32,109 +51,154 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('=== IMAGE UPLOAD HANDLER TRIGGERED ===');
-    console.log('Event:', e);
-    console.log('Target:', e.target);
-    console.log('Files:', e.target.files);
-    
-    const files = Array.from(e.target.files || []);
-    console.log('Files selected:', files);
-    console.log('Files length:', files.length);
-    
-    if (files.length > 0) {
-      // Check if adding these files would exceed the limit
-      if (formData.images.length + files.length > 10) {
-        alert(`You can only upload a maximum of 10 images. You currently have ${formData.images.length} images.`);
+  const validateFiles = (files: File[]): File[] => {
+    const validFiles: File[] = [];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+    files.forEach(file => {
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        alert(`File "${file.name}" is not a supported image format. Supported formats: JPEG, PNG, GIF, WebP`);
         return;
       }
-      
-      // Validate file sizes (10MB limit)
-      const validFiles = files.filter(file => {
-        console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
-        
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`File ${file.name} is too large. Maximum size is 10MB.`);
-          return false;
-        }
-        if (!file.type.startsWith('image/')) {
-          alert(`File ${file.name} is not an image.`);
-          return false;
-        }
-        return true;
+
+      // Check file size
+      if (file.size > maxSize) {
+        alert(`File "${file.name}" is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum size is 10MB.`);
+        return;
+      }
+
+      validFiles.push(file);
+    });
+
+    return validFiles;
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    
+    const files = Array.from(e.target.files || []);
+    
+    if (files.length === 0) {
+      setUploadStatus('idle');
+      return;
+    }
+
+    // Check total image limit
+    if (formData.images.length + files.length > 10) {
+      alert(`You can upload a maximum of 10 images. You currently have ${formData.images.length} images selected.`);
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus('idle'), 2000);
+      return;
+    }
+
+    // Validate files
+    const validFiles = validateFiles(files);
+
+    if (validFiles.length > 0) {
+      setFormData(prev => {
+        const newImages = [...prev.images, ...validFiles];
+        return { ...prev, images: newImages };
       });
       
-      console.log('Valid files:', validFiles);
-      
-      if (validFiles.length > 0) {
-        setFormData(prev => {
-          const newImages = [...prev.images, ...validFiles];
-          console.log('Setting new images:', newImages);
-          return { 
-            ...prev, 
-            images: newImages
-          };
-        });
-        console.log('Updated formData images:', [...formData.images, ...validFiles]);
-      }
+      setUploadStatus('success');
+      setTimeout(() => setUploadStatus('idle'), 2000);
     } else {
-      console.log('No files selected');
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus('idle'), 2000);
     }
     
-    // Reset the input value to allow selecting the same file again
+    // Reset input value
     e.target.value = '';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
+    setUploadStatus('uploading');
     
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
-    if (imageFiles.length > 0) {
-      // Check if adding these files would exceed the limit
-      if (formData.images.length + imageFiles.length > 10) {
-        alert(`You can only upload a maximum of 10 images. You currently have ${formData.images.length} images.`);
-        return;
-      }
+    if (imageFiles.length === 0) {
+      alert('No valid image files found in the dropped items.');
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus('idle'), 2000);
+      return;
+    }
 
-      // Validate file sizes (10MB limit)
-      const validFiles = imageFiles.filter(file => {
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`File ${file.name} is too large. Maximum size is 10MB.`);
-          return false;
-        }
-        return true;
-      });
+    // Check total image limit
+    if (formData.images.length + imageFiles.length > 10) {
+      alert(`You can upload a maximum of 10 images. You currently have ${formData.images.length} images selected.`);
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus('idle'), 2000);
+      return;
+    }
+
+    // Validate files
+    const validFiles = validateFiles(imageFiles);
+    
+    if (validFiles.length > 0) {
+      setFormData(prev => ({ 
+        ...prev, 
+        images: [...prev.images, ...validFiles] 
+      }));
       
-      if (validFiles.length > 0) {
-        console.log('Dropped image files:', validFiles);
-        setFormData(prev => ({ 
-          ...prev, 
-          images: [...prev.images, ...validFiles] 
-        }));
-      }
+      setUploadStatus('success');
+      setTimeout(() => setUploadStatus('idle'), 2000);
+    } else {
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus('idle'), 2000);
     }
   };
 
   const removeImage = (index: number) => {
-    setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+    // Revoke object URL to prevent memory leak
+    const imageToRemove = formData.images[index];
+    if (imageToRemove instanceof File) {
+      const url = URL.createObjectURL(imageToRemove);
+      URL.revokeObjectURL(url);
+    }
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      images: prev.images.filter((_, i) => i !== index) 
+    }));
+  };
+
+  const clearAllImages = () => {
+    // Revoke all object URLs
+    formData.images.forEach(image => {
+      if (image instanceof File) {
+        const url = URL.createObjectURL(image);
+        URL.revokeObjectURL(url);
+      }
+    });
+    
+    setFormData(prev => ({ ...prev, images: [] }));
   };
 
   const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !formData.tags.includes(trimmedTag)) {
+      if (formData.tags.length >= 10) {
+        alert('You can add a maximum of 10 tags.');
+        return;
+      }
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, trimmedTag] }));
       setTagInput('');
     }
   };
@@ -145,20 +209,83 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    // Basic validation
+    if (!formData.title.trim()) {
+      alert('Please enter a story title');
+      return;
+    }
+    
+    if (!formData.content.trim()) {
+      alert('Please enter your story content');
+      return;
+    }
+    
+    if (!formData.eventType) {
+      alert('Please select an event type');
+      return;
+    }
 
-    console.log('Submitting form with data:', formData);
-    console.log('Images to upload:', formData.images);
-    console.log('Images count:', formData.images.length);
-
+    // Final image validation
+    if (formData.images.length > 0) {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const oversizedImages = formData.images.filter(img => img.size > maxSize);
+      if (oversizedImages.length > 0) {
+        alert(`The following images are too large (max 10MB): ${oversizedImages.map(img => img.name).join(', ')}`);
+        return;
+      }
+    }
+    
     try {
+      setIsSubmitting(true);
+      
       await onSubmit(formData);
-      onClose();
+      
+      // Reset form on success
+      clearAllImages(); // Properly cleanup images
+      setFormData({
+        title: '',
+        content: '',
+        eventType: '',
+        location: '',
+        date: '',
+        tags: [],
+        images: []
+      });
+      setTagInput('');
+      setUploadStatus('idle');
+      
     } catch (error) {
-      console.error('Error submitting story:', error);
-      alert('Failed to submit your story. Please try again.');
+      alert(`Failed to submit story: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    } else {
+      console.error('File input ref is null');
+    }
+  };
+
+  const getUploadButtonText = () => {
+    switch (uploadStatus) {
+      case 'uploading': return 'Uploading...';
+      case 'success': return 'Added Successfully!';
+      case 'error': return 'Upload Failed';
+      default: return 'Add Photos';
+    }
+  };
+
+  const getUploadButtonClass = () => {
+    const baseClass = "px-6 py-3 font-semibold rounded-lg transition-all flex items-center gap-2 ";
+    switch (uploadStatus) {
+      case 'uploading': return baseClass + "bg-yellow-500 text-white";
+      case 'success': return baseClass + "bg-green-500 text-white";
+      case 'error': return baseClass + "bg-red-500 text-white";
+      default: return baseClass + "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600";
     }
   };
 
@@ -215,7 +342,7 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
             >
               <option value="">Select event type</option>
               {eventTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
+                <option key={type} value={type} className="bg-[#0a0a0f] text-white">{type}</option>
               ))}
             </select>
           </div>
@@ -268,161 +395,116 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
           {/* Images */}
           <div>
             <label className="block text-sm font-semibold text-white mb-2">
-              Upload Images
+              Upload Images (Optional)
             </label>
             
-            {/* Drag & Drop Zone */}
-            <div
-              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                isDragOver 
-                  ? 'border-purple-500 bg-purple-500/10' 
-                  : 'border-white/20 hover:border-purple-500/50'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              {/* Hidden file input */}
+            <div className="space-y-4">
+              {/* Hidden File Input */}
               <input
+                ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                 onChange={handleImageUpload}
                 className="hidden"
-                id="image-upload"
-                key="image-upload-input"
-                ref={(input) => {
-                  if (input) {
-                    // Store reference to the input element
-                    (window as any).imageUploadInput = input;
-                  }
-                }}
               />
-              
-              {/* Clickable upload area */}
-              <div 
-                className="cursor-pointer"
-                onClick={() => {
-                  console.log('Upload area clicked');
-                  const input = document.getElementById('image-upload') as HTMLInputElement;
-                  if (input) {
-                    console.log('File input found, clicking it...');
-                    input.click();
-                  } else {
-                    console.log('File input not found');
-                  }
-                }}
+
+              {/* Primary Upload Button */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={triggerFileInput}
+                  disabled={uploadStatus === 'uploading'}
+                  className={getUploadButtonClass()}
+                >
+                  <span>📷</span>
+                  <span>{getUploadButtonText()}</span>
+                </button>
+                
+                <span className="text-gray-400 text-sm">
+                  {formData.images.length}/10 images
+                </span>
+              </div>
+
+              {/* Upload Instructions */}
+              <div className="text-center text-gray-400 text-sm">
+                Click "Add Photos" to select images, or drag & drop files below
+                <br />
+                Supports JPEG, PNG, GIF, WebP up to 10MB each
+              </div>
+
+              {/* Drag & Drop Zone */}
+              <div
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                  isDragOver 
+                    ? 'border-purple-500 bg-purple-500/10' 
+                    : 'border-white/20 hover:border-purple-500/50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={triggerFileInput}
               >
-                <div className="text-4xl mb-2">📷</div>
+                <div className="text-2xl mb-2">📁</div>
                 <div className="text-white font-semibold mb-1">
                   {isDragOver 
                     ? 'Drop images here!' 
-                    : formData.images.length > 0 
-                      ? `${formData.images.length} image(s) selected` 
-                      : 'Click to select images or drag & drop'
+                    : 'Drag & drop images here or click to browse'
                   }
                 </div>
                 <div className="text-gray-400 text-sm">
-                  Supports JPG, PNG, GIF up to 10MB each
-                  <br />
-                  <span className="text-purple-400">
-                    {formData.images.length}/10 images selected
-                  </span>
+                  Maximum 10 images, 10MB each
                 </div>
               </div>
-              
-              {/* Alternative buttons */}
-              <div className="mt-3 space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Browse Files button clicked');
-                    const input = document.getElementById('image-upload') as HTMLInputElement;
-                    if (input) {
-                      console.log('File input found, clicking it...');
-                      input.click();
-                    } else {
-                      console.log('File input not found');
-                    }
-                  }}
-                  className="px-4 py-2 bg-purple-500/20 border border-purple-500/50 rounded-lg text-purple-300 hover:bg-purple-500/30 transition-colors text-sm"
-                >
-                  Browse Files
-                </button>
-                
-                {/* Test button to verify functionality */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('Test button clicked');
-                    console.log('Current formData.images:', formData.images);
-                    const input = document.getElementById('image-upload') as HTMLInputElement;
-                    console.log('File input element:', input);
-                    console.log('File input type:', input?.type);
-                    console.log('File input id:', input?.id);
-                    console.log('File input className:', input?.className);
-                  }}
-                  className="px-4 py-2 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-300 hover:bg-blue-500/30 transition-colors text-sm"
-                >
-                  Test
-                </button>
-              </div>
-              
-              {/* Visible file input as fallback */}
-              <div className="mt-4">
-                <label className="block text-sm font-semibold text-white mb-2">
-                  Or use this direct file input:
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-500 file:text-white hover:file:bg-purple-600"
-                />
-              </div>
+
+              {/* Image Preview Section */}
+              {formData.images.length > 0 && (
+                <div className="bg-white/5 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-white">
+                      Selected Images ({formData.images.length})
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={clearAllImages}
+                      className="text-red-400 hover:text-red-300 text-sm font-medium"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {formData.images.map((image, index) => (
+                      <div key={`${image.name}-${index}`} className="relative group">
+                        <img
+                          src={URL.createObjectURL(image)}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-white/10"
+                          onLoad={(e) => {
+                            // Clean up the object URL after the image loads
+                            setTimeout(() => {
+                              URL.revokeObjectURL((e.target as HTMLImageElement).src);
+                            }, 1000);
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-full truncate">
+                          {image.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {/* Image Preview */}
-            {formData.images.length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-white">
-                    Selected Images ({formData.images.length})
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    Clear All
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border border-white/10"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
-                        >
-                          ×
-                        </button>
-                      </div>
-                      <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                        {image.name}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Tags */}
@@ -435,9 +517,15 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
                 className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
                 placeholder="Add tags (press Enter to add)"
+                maxLength={30}
               />
               <button
                 type="button"
@@ -453,7 +541,7 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
               <div className="flex flex-wrap gap-2">
                 {formData.tags.map((tag, index) => (
                   <span
-                    key={index}
+                    key={`${tag}-${index}`}
                     className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm flex items-center gap-2"
                   >
                     {tag}
@@ -468,23 +556,37 @@ export default function ShareStoryForm({ onClose, onSubmit }: ShareStoryFormProp
                 ))}
               </div>
             )}
+            <div className="text-xs text-gray-400 mt-1">
+              {formData.tags.length}/10 tags
+            </div>
           </div>
 
-          {/* Submit Buttons */}
-          <div className="flex gap-4 pt-4">
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-semibold hover:bg-white/10 transition-all"
+              className="px-6 py-3 bg-white/10 border border-white/20 rounded-lg text-white hover:bg-white/20 transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !formData.title || !formData.content || !formData.eventType}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 border-none rounded-xl text-white font-semibold hover:-translate-y-1 hover:shadow-lg hover:shadow-purple-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isSubmitting ? 'Sharing...' : 'Share Story'}
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Publishing Story...</span>
+                </>
+              ) : (
+                <>
+                  <span>📖</span>
+                  <span>Publish Story</span>
+                </>
+              )}
             </button>
           </div>
         </form>

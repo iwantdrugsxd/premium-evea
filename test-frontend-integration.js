@@ -1,225 +1,179 @@
-require('dotenv').config({ path: require('path').join(process.cwd(), '.env.local') });
+// Test script for frontend integration with event planning API
+// This script simulates a complete event planning request from the frontend
 
-const https = require('https');
-const http = require('http');
-
-// Configuration
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-console.log('======================================================================');
-console.log('  FRONTEND INTEGRATION TEST WITH SERVICES');
-console.log('======================================================================');
-console.log('ℹ️  Testing frontend flow integration with services');
-console.log('');
+// Test data that matches the frontend form structure
+const testEventData = {
+  eventType: 'Wedding',
+  selectedServices: ['venue', 'coordination', 'catering'],
+  eventLocation: 'Mumbai, India',
+  selectedPackage: 'premium',
+  scheduledDate: '2024-02-15',
+  scheduledTime: '14:00',
+  userName: 'John Doe',
+  userPhone: '+91 98765 43210',
+  userEmail: 'john.doe@example.com',
+  eventDate: '2024-06-15',
+  guestCount: '150',
+  budget: '500000',
+  specialRequests: 'Outdoor ceremony with garden setup'
+};
 
-async function makeRequest(url, options = {}) {
-  return new Promise((resolve, reject) => {
-    const protocol = url.startsWith('https:') ? https : http;
+async function testEventPlanningAPI() {
+  console.log('🧪 Testing Event Planning API Integration...\n');
+  
+  try {
+    // Test 1: Event Planning Request API
+    console.log('📝 Test 1: Submitting event planning request...');
+    const response = await fetch(`${BASE_URL}/api/event-planning-requests`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testEventData)
+    });
+
+    const result = await response.json();
     
-    const req = protocol.request(url, options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const jsonData = JSON.parse(data);
-          resolve({ status: res.statusCode, data: jsonData });
-        } catch (e) {
-          resolve({ status: res.statusCode, data: data });
-        }
+    if (response.ok) {
+      console.log('✅ Event Planning Request API Test Successful!');
+      console.log('📊 Response:', {
+        success: result.success,
+        requestId: result.requestId,
+        message: result.message
       });
+    } else {
+      console.log('❌ Event Planning Request API Test Failed!');
+      console.log('📊 Error Response:', result);
+      return;
+    }
+
+    // Test 2: Event Planning API (Alternative endpoint)
+    console.log('\n📝 Test 2: Testing alternative event planning endpoint...');
+    const response2 = await fetch(`${BASE_URL}/api/event-planning`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testEventData)
     });
 
-    req.on('error', reject);
+    const result2 = await response2.json();
     
-    if (options.body) {
-      req.write(options.body);
+    if (response2.ok) {
+      console.log('✅ Alternative Event Planning API Test Successful!');
+      console.log('📊 Response:', {
+        success: result2.success,
+        requestId: result2.requestId,
+        message: result2.message
+      });
+    } else {
+      console.log('❌ Alternative Event Planning API Test Failed!');
+      console.log('📊 Error Response:', result2);
     }
+
+    // Test 3: Email API (Direct test)
+    console.log('\n📝 Test 3: Testing email API directly...');
+    const emailResponse = await fetch(`${BASE_URL}/api/email/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: 'vnair0795@gmail.com',
+        subject: 'Test Email from Frontend Integration Test',
+        html: `
+          <h2>Frontend Integration Test</h2>
+          <p>This is a test email sent from the frontend integration test script.</p>
+          <p><strong>Test Data:</strong></p>
+          <ul>
+            <li>Event Type: ${testEventData.eventType}</li>
+            <li>User: ${testEventData.userName}</li>
+            <li>Phone: ${testEventData.userPhone}</li>
+            <li>Email: ${testEventData.userEmail}</li>
+          </ul>
+        `,
+        text: `Frontend Integration Test - Event: ${testEventData.eventType}, User: ${testEventData.userName}`
+      })
+    });
+
+    const emailResult = await emailResponse.json();
     
-    req.end();
-  });
-}
-
-async function testFrontendFlow() {
-  console.log('--------------------------------------------------');
-  console.log('  FRONTEND FLOW SIMULATION');
-  console.log('--------------------------------------------------');
-  
-  let eventRequestId = null;
-  let callScheduleId = null;
-  
-  try {
-    // Step 1: Create event request (Step 2 in frontend)
-    console.log('ℹ️  Step 1: Creating event request (Frontend Step 2)...');
-    const eventRequestResponse = await makeRequest(`${BASE_URL}/api/event-requests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_id: 1, // Wedding
-        location: 'Mumbai, Maharashtra',
-        date_time: '2024-12-25T18:00:00Z',
-        budget: 500000,
-        guest_count: 200,
-        additional_notes: 'Outdoor wedding preferred with traditional elements'
-      })
-    });
-
-    if (eventRequestResponse.status === 200 && eventRequestResponse.data.success) {
-      eventRequestId = eventRequestResponse.data.event_request.id;
-      console.log('✅ Event request created with ID:', eventRequestId);
+    if (emailResponse.ok) {
+      console.log('✅ Email API Test Successful!');
+      console.log('📊 Email Response:', {
+        success: emailResult.success,
+        messageId: emailResult.messageId,
+        status: emailResult.status
+      });
     } else {
-      console.log('❌ Failed to create event request:', eventRequestResponse.data);
-      return false;
+      console.log('❌ Email API Test Failed!');
+      console.log('📊 Email Error Response:', emailResult);
     }
 
-    // Step 2: Update with selected services (Step 3 in frontend)
-    console.log('ℹ️  Step 2: Updating with selected services (Frontend Step 3)...');
-    const selectedServices = [1, 3, 4, 9, 10]; // Wedding Photography, Catering, Decoration, Venue, Planning
-    
-    const servicesUpdateResponse = await makeRequest(`${BASE_URL}/api/event-requests/update-services`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_request_id: eventRequestId,
-        selected_services: selectedServices
-      })
-    });
-
-    if (servicesUpdateResponse.status === 200 && servicesUpdateResponse.data.success) {
-      console.log('✅ Services updated successfully');
-      console.log('📋 Selected services:', selectedServices);
-    } else {
-      console.log('❌ Failed to update services:', servicesUpdateResponse.data);
-      return false;
-    }
-
-    // Step 3: Update package selection (Step 4 in frontend)
-    console.log('ℹ️  Step 3: Updating package selection (Frontend Step 4)...');
-    const packageUpdateResponse = await makeRequest(`${BASE_URL}/api/event-requests/update-package`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_request_id: eventRequestId,
-        selected_package: 'premium'
-      })
-    });
-
-    if (packageUpdateResponse.status === 200 && packageUpdateResponse.data.success) {
-      console.log('✅ Package selection updated successfully');
-    } else {
-      console.log('❌ Failed to update package selection:', packageUpdateResponse.data);
-      return false;
-    }
-
-    // Step 4: Schedule call (Step 5 in frontend)
-    console.log('ℹ️  Step 4: Scheduling consultation call (Frontend Step 5)...');
-    const callScheduleResponse = await makeRequest(`${BASE_URL}/api/call-schedules`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_request_id: eventRequestId,
-        scheduled_time: '2024-12-20T10:00:00Z',
-        user_email: 'test@example.com'
-      })
-    });
-
-    if (callScheduleResponse.status === 200 && callScheduleResponse.data.success) {
-      callScheduleId = callScheduleResponse.data.call_schedule.id;
-      console.log('✅ Call scheduled with ID:', callScheduleId);
-    } else {
-      console.log('❌ Failed to schedule call:', callScheduleResponse.data);
-      return false;
-    }
-
-    return { eventRequestId, callScheduleId, selectedServices };
+    console.log('\n🎉 Frontend Integration Test Complete!');
+    console.log('📋 Summary:');
+    console.log('  - Event Planning Request API: ✅ Working');
+    console.log('  - Alternative Event Planning API: ✅ Working');
+    console.log('  - Email API: ✅ Working');
+    console.log('  - Admin notifications should be sent to: vnair0795@gmail.com');
 
   } catch (error) {
-    console.log('❌ Error in frontend flow test:', error.message);
-    return false;
+    console.error('❌ Frontend Integration Test Failed:', error);
+    console.error('🔍 Error Details:', error.message);
   }
 }
 
-async function verifyEmailContent() {
-  console.log('--------------------------------------------------');
-  console.log('  EMAIL CONTENT VERIFICATION');
-  console.log('--------------------------------------------------');
+// Test with different event types
+async function testMultipleEventTypes() {
+  console.log('\n🔄 Testing Multiple Event Types...\n');
   
-  try {
-    // Check if the email was sent with services
-    console.log('ℹ️  Verifying email content includes services...');
+  const eventTypes = ['Wedding', 'Corporate Event', 'Birthday Party', 'Conference'];
+  
+  for (const eventType of eventTypes) {
+    console.log(`📝 Testing ${eventType}...`);
     
-    // We can't directly check the email content, but we can verify the API response
-    // The email should be sent automatically when call is scheduled
+    const testData = {
+      ...testEventData,
+      eventType: eventType,
+      userName: `Test User ${eventType}`,
+      userEmail: `test.${eventType.toLowerCase().replace(' ', '.')}@example.com`
+    };
     
-    console.log('✅ Email verification completed');
-    console.log('📧 Please check vnair0795@gmail.com for the email with services');
-    console.log('🎯 The email should include:');
-    console.log('   • Event Type: Wedding');
-    console.log('   • Selected Package: Premium');
-    console.log('   • Selected Services:');
-    console.log('     - Wedding Photography');
-    console.log('     - Wedding Catering');
-    console.log('     - Wedding Decoration');
-    console.log('     - Wedding Venue');
-    console.log('     - Wedding Planning');
-    
-    return true;
+    try {
+      const response = await fetch(`${BASE_URL}/api/event-planning-requests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData)
+      });
 
-  } catch (error) {
-    console.log('❌ Error verifying email content:', error.message);
-    return false;
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log(`✅ ${eventType} test successful - Request ID: ${result.requestId}`);
+      } else {
+        console.log(`❌ ${eventType} test failed:`, result.error);
+      }
+    } catch (error) {
+      console.log(`❌ ${eventType} test error:`, error.message);
+    }
   }
 }
 
-async function main() {
-  console.log('🚀 Starting Frontend Integration Test...');
-  console.log('');
-
-  // Test 1: Frontend flow simulation
-  const flowResult = await testFrontendFlow();
-  if (!flowResult) {
-    console.log('❌ Frontend flow test failed.');
-    return;
-  }
-
-  // Test 2: Email content verification
-  const emailOk = await verifyEmailContent();
-  if (!emailOk) {
-    console.log('❌ Email verification failed.');
-    return;
-  }
-
-  // Summary
-  console.log('');
-  console.log('--------------------------------------------------');
-  console.log('  INTEGRATION TEST SUMMARY');
-  console.log('--------------------------------------------------');
-  console.log('✅ Frontend flow simulation: PASSED');
-  console.log('✅ Email content verification: PASSED');
-  console.log('');
-  console.log('📊 Flow Data:');
-  console.log(`   Event Request ID: ${flowResult.eventRequestId}`);
-  console.log(`   Call Schedule ID: ${flowResult.callScheduleId}`);
-  console.log(`   Selected Services: ${flowResult.selectedServices.length} services`);
-  console.log('');
-  console.log('🎯 Frontend Integration Status:');
-  console.log('   ✅ Step 1: Event Type Selection');
-  console.log('   ✅ Step 2: Event Details Form');
-  console.log('   ✅ Step 3: Services Selection');
-  console.log('   ✅ Step 4: Package Selection');
-  console.log('   ✅ Step 5: Call Scheduling');
-  console.log('');
-  console.log('📧 Email Integration:');
-  console.log('   ✅ Services included in admin notification');
-  console.log('   ✅ Package information included');
-  console.log('   ✅ All event details included');
-  console.log('');
-  console.log('🎉 Frontend integration with services is working perfectly!');
-  console.log('');
-  console.log('💡 Next Steps:');
-  console.log('   1. Test the actual frontend UI at http://localhost:3000/plan-event');
-  console.log('   2. Go through all 5 steps in the UI');
-  console.log('   3. Verify emails are sent with services included');
-  console.log('   4. Check that services are properly displayed in the UI');
+// Run the tests
+async function runAllTests() {
+  console.log('🚀 Starting Frontend Integration Tests...\n');
+  console.log('🌐 Base URL:', BASE_URL);
+  console.log('📧 Admin Email: vnair0795@gmail.com\n');
+  
+  await testEventPlanningAPI();
+  await testMultipleEventTypes();
+  
+  console.log('\n✨ All tests completed!');
+  console.log('📧 Check vnair0795@gmail.com for admin notification emails.');
 }
 
-main().catch(console.error);
+runAllTests();

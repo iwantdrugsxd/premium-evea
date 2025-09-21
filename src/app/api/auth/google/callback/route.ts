@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Set JWT token in cookie and localStorage
-    const response = NextResponse.redirect(new URL('/marketplace', request.url))
+    const response = NextResponse.redirect(new URL('/plan-event', request.url))
     response.cookies.set('authToken', result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -69,11 +69,29 @@ export async function GET(request: NextRequest) {
     })
 
     const script = `
-      <script>
-        localStorage.setItem('authToken', '${result.token}');
-        localStorage.setItem('userData', '${JSON.stringify(result.user)}');
-        window.location.href = '/marketplace';
-      </script>
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Authentication Successful</title>
+        </head>
+        <body>
+          <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+            <h2>Authentication Successful!</h2>
+            <p>Redirecting to event planning...</p>
+          </div>
+          <script>
+            try {
+              localStorage.setItem('authToken', '${result.token}');
+              localStorage.setItem('userData', '${JSON.stringify(result.user)}');
+              console.log('User data stored:', ${JSON.stringify(result.user)});
+              window.location.href = '/plan-event';
+            } catch (error) {
+              console.error('Error storing user data:', error);
+              window.location.href = '/login?error=storage_failed';
+            }
+          </script>
+        </body>
+      </html>
     `
     return new Response(script, { headers: { 'Content-Type': 'text/html' } })
 

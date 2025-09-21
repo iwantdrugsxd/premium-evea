@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS community_stories (
 -- Story likes table
 CREATE TABLE IF NOT EXISTS story_likes (
   id SERIAL PRIMARY KEY,
-  story_id INTEGER REFERENCES community_stories(id) ON DELETE CASCADE,
+  story_id INTEGER NOT NULL,
   user_id VARCHAR(255) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(story_id, user_id)
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS story_likes (
 -- Story comments table
 CREATE TABLE IF NOT EXISTS story_comments (
   id SERIAL PRIMARY KEY,
-  story_id INTEGER REFERENCES community_stories(id) ON DELETE CASCADE,
+  story_id INTEGER NOT NULL,
   user_id VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -88,7 +88,7 @@ CREATE POLICY "Users can update their own comments" ON story_comments
 CREATE POLICY "Users can delete their own comments" ON story_comments
   FOR DELETE USING (user_id = auth.uid()::text);
 
--- Insert some sample data
+-- Insert some sample data (only if it doesn't exist)
 INSERT INTO community_stories (title, content, event_type, location, event_date, tags, images, user_id) VALUES
 (
   'My Dream Wedding with EVEA',
@@ -99,7 +99,9 @@ INSERT INTO community_stories (title, content, event_type, location, event_date,
   ARRAY['wedding', 'mumbai', 'dream', 'perfect'],
   ARRAY['https://res.cloudinary.com/your-cloud/image/upload/v1234567890/wedding1.jpg'],
   'user-123'
-),
+) ON CONFLICT DO NOTHING;
+
+INSERT INTO community_stories (title, content, event_type, location, event_date, tags, images, user_id) VALUES
 (
   'Amazing Birthday Party Experience',
   'My daughter''s 10th birthday party was a huge success thanks to EVEA! The princess theme was executed flawlessly, and all the kids had an amazing time. The decorations, games, and entertainment were top-notch.',
@@ -109,7 +111,9 @@ INSERT INTO community_stories (title, content, event_type, location, event_date,
   ARRAY['birthday', 'kids', 'princess', 'fun'],
   ARRAY['https://res.cloudinary.com/your-cloud/image/upload/v1234567890/birthday1.jpg'],
   'user-456'
-),
+) ON CONFLICT DO NOTHING;
+
+INSERT INTO community_stories (title, content, event_type, location, event_date, tags, images, user_id) VALUES
 (
   'Corporate Event Success',
   'Our annual corporate event was handled beautifully by EVEA. The team managed everything from venue setup to catering, and the event ran smoothly. Highly recommend their services for corporate events!',
@@ -119,20 +123,36 @@ INSERT INTO community_stories (title, content, event_type, location, event_date,
   ARRAY['corporate', 'professional', 'success'],
   ARRAY['https://res.cloudinary.com/your-cloud/image/upload/v1234567890/corporate1.jpg'],
   'user-789'
-);
+) ON CONFLICT DO NOTHING;
 
--- Insert some sample likes
+-- Insert some sample likes (only if they don't exist)
 INSERT INTO story_likes (story_id, user_id) VALUES
-(1, 'user-456'),
-(1, 'user-789'),
-(2, 'user-123'),
-(2, 'user-789'),
-(3, 'user-123'),
-(3, 'user-456');
+(1, 'user-456') ON CONFLICT (story_id, user_id) DO NOTHING;
 
--- Insert some sample comments
+INSERT INTO story_likes (story_id, user_id) VALUES
+(1, 'user-789') ON CONFLICT (story_id, user_id) DO NOTHING;
+
+INSERT INTO story_likes (story_id, user_id) VALUES
+(2, 'user-123') ON CONFLICT (story_id, user_id) DO NOTHING;
+
+INSERT INTO story_likes (story_id, user_id) VALUES
+(2, 'user-789') ON CONFLICT (story_id, user_id) DO NOTHING;
+
+INSERT INTO story_likes (story_id, user_id) VALUES
+(3, 'user-123') ON CONFLICT (story_id, user_id) DO NOTHING;
+
+INSERT INTO story_likes (story_id, user_id) VALUES
+(3, 'user-456') ON CONFLICT (story_id, user_id) DO NOTHING;
+
+-- Insert some sample comments (only if they don't exist)
 INSERT INTO story_comments (story_id, user_id, content) VALUES
-(1, 'user-456', 'Congratulations! Your wedding looks absolutely beautiful!'),
-(1, 'user-789', 'EVEA really knows how to make dreams come true!'),
-(2, 'user-123', 'What a lovely party! The decorations are amazing.'),
-(3, 'user-123', 'Great to hear about your successful corporate event!');
+(1, 'user-456', 'Congratulations! Your wedding looks absolutely beautiful!') ON CONFLICT DO NOTHING;
+
+INSERT INTO story_comments (story_id, user_id, content) VALUES
+(1, 'user-789', 'EVEA really knows how to make dreams come true!') ON CONFLICT DO NOTHING;
+
+INSERT INTO story_comments (story_id, user_id, content) VALUES
+(2, 'user-123', 'What a lovely party! The decorations are amazing.') ON CONFLICT DO NOTHING;
+
+INSERT INTO story_comments (story_id, user_id, content) VALUES
+(3, 'user-123', 'Great to hear about your successful corporate event!') ON CONFLICT DO NOTHING;

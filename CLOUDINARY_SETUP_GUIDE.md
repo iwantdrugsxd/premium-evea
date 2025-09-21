@@ -1,126 +1,107 @@
-# 🖼️ Cloudinary Setup Guide for Image Uploads
+# Cloudinary Setup Guide for EVEA Community Stories
 
-## 🚀 Quick Setup (5 minutes)
+## Quick Fix for Current Issue
+
+**The error shows**: `"Upload preset not found"` for preset `evea_stories`
+
+**Immediate solution**: Create the upload preset with the exact name `evea_stories`
+
+## Step-by-Step Setup
 
 ### 1. Create Cloudinary Account
-1. Go to [cloudinary.com](https://cloudinary.com)
-2. Click "Sign Up For Free"
-3. Complete registration (no credit card required)
+- Go to [cloudinary.com](https://cloudinary.com)
+- Sign up for a free account
+- Verify your email
 
 ### 2. Get Your Credentials
-1. After login, go to **Dashboard**
-2. Copy these values:
-   - **Cloud Name** (e.g., `d123456789`)
-   - **API Key** (e.g., `123456789012345`)
-   - **API Secret** (e.g., `abcdefghijklmnop`)
+- Go to Dashboard → Account Details
+- Copy these values:
+  - **Cloud Name** (e.g., `dackojgpt`)
+  - **API Key** (e.g., `123456789012345`)
+  - **API Secret** (e.g., `abcdefghijklmnopqrstuvwxyz`)
 
 ### 3. Create Upload Preset
-1. In Dashboard, go to **Settings** → **Upload**
-2. Scroll to **Upload presets**
-3. Click **Add upload preset**
-4. Set **Preset name**: `evea_stories`
-5. Set **Signing Mode**: `Unsigned`
-6. Set **Folder**: `evea/stories`
-7. Click **Save**
+- Go to Dashboard → Settings → Upload
+- Scroll to "Upload presets"
+- Click "Add upload preset"
+- Set these values:
+  - **Preset name**: `evea_stories` (exactly this name)
+  - **Signing Mode**: `Unsigned`
+  - **Folder**: `evea_stories` (optional)
+  - **Allowed formats**: `jpg, png, gif, webp`
+  - **Max file size**: `10MB`
+  - **Transformation**: None (or add if you want)
+- Click "Save"
 
 ### 4. Add Environment Variables
-Add these to your `.env.local` file:
+Create/update your `.env.local` file in the `evea-nextjs` folder:
 
-```env
-# Cloudinary Configuration (REQUIRED for image uploads)
+```bash
+# Cloudinary Configuration
 CLOUDINARY_CLOUD_NAME=your_cloud_name_here
 CLOUDINARY_API_KEY=your_api_key_here
 CLOUDINARY_API_SECRET=your_api_secret_here
 CLOUDINARY_UPLOAD_PRESET=evea_stories
+
+# Other existing variables...
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 ```
 
-### 5. Restart Your Server
+### 5. Restart Your Development Server
 ```bash
+# Stop the current server (Ctrl+C)
+# Then restart
 npm run dev
 ```
 
-## 🔧 Testing the Setup
+## Test the Setup
 
-### Test with Frontend
 1. Go to `/community` page
 2. Click "Share Your Story"
-3. Upload an image
-4. Check browser console for logs
-5. Check server terminal for Cloudinary logs
+3. Add some images
+4. Submit the form
+5. Check the console for Cloudinary success messages
 
-### Test with API
-```bash
-curl -X POST http://localhost:3001/api/stories \
-  -F "title=Test Story" \
-  -F "content=Testing image upload" \
-  -F "eventType=Test Event" \
-  -F "userId=test-user" \
-  -F "tags=[\"test\"]" \
-  -F "images=@/path/to/test-image.jpg"
-```
+## Troubleshooting
 
-## 🐛 Troubleshooting
+### "Upload preset not found" Error
+- **Solution**: Make sure the preset name is exactly `evea_stories` (case-sensitive)
+- **Check**: Go to Cloudinary Dashboard → Settings → Upload → Upload presets
 
-### Common Issues
+### "Invalid API key" Error
+- **Solution**: Verify your API key and secret are correct
+- **Check**: Copy from Cloudinary Dashboard → Account Details
 
-#### 1. "Cloudinary configuration is incomplete"
-**Solution**: Check your `.env.local` file has all required variables
+### "Cloud name not found" Error
+- **Solution**: Verify your cloud name is correct
+- **Check**: It's in your Cloudinary URL: `https://res.cloudinary.com/YOUR_CLOUD_NAME/...`
 
-#### 2. "Upload preset not found"
-**Solution**: Ensure preset name is exactly `evea_stories` and is unsigned
+### Images not uploading
+- **Check**: Browser console for JavaScript errors
+- **Check**: Server terminal for API errors
+- **Verify**: Environment variables are loaded correctly
 
-#### 3. "Invalid cloud name"
-**Solution**: Verify your cloud name from Dashboard
+## Security Notes
 
-#### 4. Images not uploading
-**Solution**: Check server logs for detailed error messages
+- **Never commit** `.env.local` to version control
+- **Use unsigned uploads** for public image uploads (more secure)
+- **Set file size limits** in both frontend and Cloudinary preset
+- **Restrict file types** to images only
 
-### Debug Steps
+## Alternative: Use Different Preset Name
 
-1. **Check Environment Variables**:
-   ```bash
-   echo $CLOUDINARY_CLOUD_NAME
-   echo $CLOUDINARY_API_KEY
-   echo $CLOUDINARY_API_SECRET
-   echo $CLOUDINARY_UPLOAD_PRESET
-   ```
+If you want to use a different preset name:
 
-2. **Check Server Logs**: Look for Cloudinary upload logs
+1. Create the preset with your preferred name
+2. Update `CLOUDINARY_UPLOAD_PRESET` in `.env.local`
+3. Restart the server
 
-3. **Test Upload Preset**: Try uploading manually in Cloudinary Dashboard
+## Current Status
 
-4. **Check File Types**: Ensure images are JPG, PNG, or GIF
+✅ **Frontend**: Fixed and working  
+✅ **Backend API**: Ready and configured  
+❌ **Cloudinary**: Needs preset creation  
+✅ **Database**: Tables created automatically  
 
-## 📱 Features Available
-
-✅ **Multiple Image Upload**: Up to 10 images per story
-✅ **Drag & Drop**: Modern file selection interface
-✅ **File Validation**: Size and type checking
-✅ **Image Preview**: See images before upload
-✅ **Cloudinary Storage**: Secure, optimized hosting
-✅ **CDN Delivery**: Fast loading worldwide
-✅ **Automatic Optimization**: Cloudinary handles image processing
-
-## 🎯 Next Steps
-
-1. **Test Basic Upload**: Upload a small image (under 1MB)
-2. **Test Multiple Images**: Upload 2-3 images at once
-3. **Test Large Images**: Try images around 5-10MB
-4. **Test Different Formats**: JPG, PNG, GIF
-5. **Verify in Database**: Check that image URLs are stored
-
-## 📞 Support
-
-If you're still having issues:
-
-1. Check the server logs for detailed error messages
-2. Verify your Cloudinary credentials
-3. Ensure the upload preset is configured correctly
-4. Test with a simple image first
-
-## 🔒 Security Notes
-
-- **API Secret**: Never expose this in frontend code
-- **Upload Preset**: Set to "unsigned" for public uploads
-- **File Limits**: Currently set to 10MB per image, 10 images max
-- **File Types**: Only image files are accepted
+Once you create the `evea_stories` preset, everything should work perfectly!

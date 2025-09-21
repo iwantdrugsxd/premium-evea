@@ -1,73 +1,39 @@
-const http = require('http');
-const https = require('https');
+// Using built-in fetch (Node.js 18+)
 
-const BASE_URL = 'http://localhost:3000';
-
-async function makeRequest(url, options, data = null) {
-  return new Promise((resolve, reject) => {
-    const protocol = url.startsWith('https') ? https : http;
-    
-    const req = protocol.request(url, options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => body += chunk);
-      res.on('end', () => {
-        try {
-          const response = {
-            status: res.statusCode,
-            headers: res.headers,
-            body: body ? JSON.parse(body) : null
-          };
-          resolve(response);
-        } catch (error) {
-          resolve({
-            status: res.statusCode,
-            headers: res.headers,
-            body: body
-          });
-        }
-      });
-    });
-
-    req.on('error', reject);
-
-    if (data) {
-      req.write(JSON.stringify(data));
-    }
-    
-    req.end();
-  });
-}
-
-async function testEmailFix() {
-  console.log('🧪 Testing Email Fix for Call Schedules...\n');
-  
+async function testEmailAPI() {
   try {
-    // Test call scheduling with email notification
-    console.log('📞 Testing call schedule with email notification...');
-    const response = await makeRequest(`${BASE_URL}/api/call-schedules`, {
+    console.log('🧪 Testing Email API...');
+    
+    const response = await fetch('http://localhost:3000/api/email/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
-    }, {
-      event_request_id: 32,
-      scheduled_time: '2025-08-31T06:00:00Z',
-      user_email: 'test-email-fix@example.com'
+      },
+      body: JSON.stringify({
+        to: 'vnair0795@gmail.com',
+        subject: 'Test Email - Event Planning System',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #7c3aed;">Test Email</h1>
+            <p>This is a test email to verify the email system is working correctly.</p>
+            <p>If you receive this email, the system is functioning properly!</p>
+          </div>
+        `,
+        text: 'Test Email - Event Planning System is working correctly!'
+      })
     });
 
-    console.log(`Status: ${response.status}`);
-    if (response.status === 200) {
-      console.log('✅ Call schedule created successfully');
-      console.log('📧 Email should have been sent to vnair0795@gmail.com');
-      console.log('📋 Check your email inbox for the notification');
+    const result = await response.json();
+    
+    if (response.ok) {
+      console.log('✅ Email API Test Successful:', result);
     } else {
-      console.log('❌ Call schedule failed');
-      console.log('Error:', response.body?.error || 'Unknown error');
+      console.log('❌ Email API Test Failed:', result);
     }
-
+    
   } catch (error) {
-    console.log('❌ Test failed:', error.message);
+    console.error('❌ Email API Test Error:', error);
   }
 }
 
-testEmailFix().catch(console.error);
+testEmailAPI();

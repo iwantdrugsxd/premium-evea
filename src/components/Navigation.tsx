@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Settings, LogOut, ChevronDown, Info, Heart, Building, Camera, Users, Star, Gift, Music } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, Info, Building, Users } from 'lucide-react';
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
@@ -43,12 +43,8 @@ export default function Navigation() {
 
   const aboutMenuItems = [
     { href: '/about', label: 'About Us', icon: <Info className="w-4 h-4" /> },
-    { href: '/services', label: 'Our Services', icon: <Heart className="w-4 h-4" /> },
-    { href: '/portfolio', label: 'Portfolio', icon: <Camera className="w-4 h-4" /> },
-    { href: '/team', label: 'Our Team', icon: <Users className="w-4 h-4" /> },
-    { href: '/testimonials', label: 'Testimonials', icon: <Star className="w-4 h-4" /> },
-    { href: '/faq', label: 'FAQ', icon: <Gift className="w-4 h-4" /> },
-    { href: '/blog', label: 'Blog', icon: <Music className="w-4 h-4" /> }
+    { href: '/careers', label: 'Careers', icon: <Building className="w-4 h-4" /> },
+    { href: '/community', label: 'Community', icon: <Users className="w-4 h-4" /> }
   ];
 
   return (
@@ -115,9 +111,6 @@ export default function Navigation() {
               </AnimatePresence>
             </div>
             
-            <NavLink href="/marketplace">Marketplace</NavLink>
-            <NavLink href="/community">Community</NavLink>
-            <NavLink href="/careers">Careers</NavLink>
             
             {/* Auth Buttons */}
             {isLoggedIn ? (

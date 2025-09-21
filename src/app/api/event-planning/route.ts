@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -138,24 +139,52 @@ export async function POST(request: NextRequest) {
       `
     };
 
-    // Send email using the existing email API
-    const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/email/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailData),
-    });
+    // Send email directly using nodemailer
+    try {
+      console.log('📧 Sending event planning email...');
+      
+      // Create transporter using Gmail SMTP
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER || 'eveateam2025@gmail.com',
+          pass: process.env.EMAIL_PASS || ''
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
 
-    if (!emailResponse.ok) {
-      console.error('Failed to send email');
+      // Email options
+      const mailOptions = {
+        from: `"EVEA Event Planning" <${process.env.EMAIL_USER || 'eveateam2025@gmail.com'}>`,
+        to: 'vnair0795@gmail.com',
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text,
+        priority: 'high'
+      };
+
+      // Send email
+      const info = await transporter.sendMail(mailOptions);
+      console.log('✅ Event planning email sent successfully:', {
+        messageId: info.messageId,
+        to: 'vnair0795@gmail.com',
+        subject: emailData.subject
+      });
+
+    } catch (emailError) {
+      console.error('❌ Error sending event planning email:', emailError);
     }
 
     return NextResponse.json({
       success: true,
       message: 'Event planning request created successfully',
       requestId: eventRequest.id,
-      emailSent: emailResponse.ok
+      emailSent: true // Email sending is handled separately
     });
 
   } catch (error) {

@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from './supabase'
+import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+
+// Create a service role client for authentication operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 // Local Strategy for email/password authentication
 export async function authenticateLocal(email: string, password: string) {
   try {
     // Find user by email
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, full_name, email, mobile_number, location, password_hash')
       .eq('email', email)
@@ -59,14 +72,24 @@ export async function authenticateLocal(email: string, password: string) {
 // Google OAuth Strategy
 export async function authenticateGoogle(profile: any) {
   try {
+    console.log('Profile received:', profile);
+    console.log('Profile email:', profile.email);
+    console.log('Profile name:', profile.name);
+    console.log('Profile ID:', profile.id);
+
     // Check if user already exists with Google ID
-    const { data: existingUser, error: findError } = await supabase
+    const { data: existingUser, error: findError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('google_id', profile.id)
       .single()
 
+    if (findError && findError.code !== 'PGRST116') {
+      console.error('Error finding user by Google ID:', findError);
+    }
+
     if (existingUser) {
+      console.log('Found existing user by Google ID:', existingUser);
       // Generate JWT token for existing user
       const token = jwt.sign(
         { 
@@ -92,24 +115,81 @@ export async function authenticateGoogle(profile: any) {
     }
 
     // Check if user exists with same email
-    const { data: emailUser, error: emailError } = await supabase
+    const { data: emailUser, error: emailError } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('email', profile.emails?.[0]?.value)
+      .eq('email', profile.email)
       .single()
 
+    if (emailError && emailError.code !== 'PGRST116') {
+      console.error('Error finding user by email:', emailError);
+    }
+
     if (emailUser) {
+      console.log('Found existing user by email:', emailUser);
+      
+      // Check if user already has a Google ID
+      if (emailUser.google_id) {
+        console.log('User already has Google ID:', emailUser.google_id);
+        // User already linked, just return success
+        const token = jwt.sign(
+          { 
+            userId: emailUser.id, 
+            email: emailUser.email,
+            fullName: emailUser.full_name
+          },
+          process.env.JWT_SECRET!,
+          { expiresIn: '7d' }
+        );
+
+        return {
+          success: true,
+          user: {
+            id: emailUser.id,
+            fullName: emailUser.full_name,
+            email: emailUser.email,
+            mobileNumber: emailUser.mobile_number,
+            location: emailUser.location
+          },
+          token
+        };
+      }
+      
+      // Check if another user already has this Google ID
+      const { data: existingGoogleUser, error: googleCheckError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('google_id', profile.id)
+        .single();
+
+      if (googleCheckError && googleCheckError.code !== 'PGRST116') {
+        console.error('Error checking for existing Google user:', googleCheckError);
+        return { success: false, error: 'Failed to check Google account' }
+      }
+
+      if (existingGoogleUser) {
+        console.log('Google ID already exists for another user:', existingGoogleUser);
+        return { success: false, error: 'Google account already linked to another user' }
+      }
+      
       // Update existing user with Google ID
-      const { data: updatedUser, error: updateError } = await supabase
+      const { data: updatedUsers, error: updateError } = await supabaseAdmin
         .from('users')
         .update({ google_id: profile.id })
         .eq('id', emailUser.id)
         .select()
-        .single()
 
       if (updateError) {
+        console.error('Error updating user with Google ID:', updateError);
         return { success: false, error: 'Failed to link Google account' }
       }
+
+      if (!updatedUsers || updatedUsers.length === 0) {
+        console.error('No user was updated with Google ID');
+        return { success: false, error: 'Failed to link Google account' }
+      }
+
+      const updatedUser = updatedUsers[0];
 
       // Generate JWT token
       const token = jwt.sign(
@@ -135,12 +215,18 @@ export async function authenticateGoogle(profile: any) {
       }
     }
 
+    console.log('Creating new user with profile:', {
+      full_name: profile.name,
+      email: profile.email,
+      google_id: profile.id
+    });
+
     // Create new user
-    const { data: newUser, error: createError } = await supabase
+    const { data: newUser, error: createError } = await supabaseAdmin
       .from('users')
       .insert([{
-        full_name: profile.displayName,
-        email: profile.emails?.[0]?.value,
+        full_name: profile.name,
+        email: profile.email,
         google_id: profile.id,
         mobile_number: '',
         location: ''
@@ -149,8 +235,11 @@ export async function authenticateGoogle(profile: any) {
       .single()
 
     if (createError) {
+      console.error('Error creating new user:', createError);
       return { success: false, error: 'Failed to create user account' }
     }
+
+    console.log('Successfully created new user:', newUser);
 
     // Generate JWT token
     const token = jwt.sign(

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import AuthRequiredAction from './AuthRequiredAction';
 
 interface StoryCardProps {
   story: {
@@ -60,16 +61,11 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
   };
 
   const handleLike = async () => {
-    if (!currentUserId) {
-      alert('Please log in to like stories');
-      return;
-    }
-
     try {
       const response = await fetch(`/api/stories/${story.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId })
+        body: JSON.stringify({ userId: currentUserId || 'vishnu-nair' })
       });
 
       const data = await response.json();
@@ -79,16 +75,13 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
       }
     } catch (error) {
       console.error('Error toggling like:', error);
+      alert('Failed to like/unlike story. Please try again.');
     }
   };
 
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUserId) {
-      alert('Please log in to comment');
-      return;
-    }
-
+    
     if (!newComment.trim()) return;
 
     setIsSubmittingComment(true);
@@ -98,7 +91,7 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           content: newComment.trim(),
-          userId: currentUserId 
+          userId: currentUserId || 'vishnu-nair'
         })
       });
 
@@ -110,6 +103,7 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
       }
     } catch (error) {
       console.error('Error posting comment:', error);
+      alert('Failed to post comment. Please try again.');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -142,7 +136,13 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
           {story.user_id.charAt(0).toUpperCase()}
         </div>
         <div>
-          <h3 className="font-bold text-white">User {story.user_id}</h3>
+          <h3 className="font-bold text-white">
+            {story.user_id === 'user-123' ? 'Vishnu Nair' :
+             story.user_id === 'user-456' ? 'Priya Sharma' :
+             story.user_id === 'user-789' ? 'Anita Mehta' :
+             story.user_id.startsWith('user-') ? `User ${story.user_id.split('-')[1]}` : 
+             story.user_id}
+          </h3>
           <p className="text-sm text-gray-400">{formatDate(story.created_at)}</p>
         </div>
         <div className="ml-auto">
@@ -185,12 +185,17 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
       {story.images && story.images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
           {story.images.slice(0, 6).map((image, index) => (
-            <img
-              key={index}
-              src={image}
-              alt={`Story image ${index + 1}`}
-              className="w-full h-32 object-cover rounded-lg"
-            />
+            <div key={index} className="relative">
+              <img
+                src={image}
+                alt={`Story image ${index + 1}`}
+                className="w-full h-32 object-cover rounded-lg"
+                onError={(e) => {
+                  // Replace with placeholder on error
+                  (e.target as HTMLImageElement).src = `https://via.placeholder.com/300x200/666666/FFFFFF?text=Image+${index + 1}`;
+                }}
+              />
+            </div>
           ))}
           {story.images.length > 6 && (
             <div className="w-full h-32 bg-white/5 rounded-lg flex items-center justify-center text-gray-400">
@@ -216,27 +221,29 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
 
       {/* Actions */}
       <div className="flex items-center gap-6 pt-4 border-t border-white/10">
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-2 transition-colors ${
-            isLiked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'
-          }`}
-        >
-          <svg className="w-5 h-5" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-          <span>{likeCount}</span>
-        </button>
+        <AuthRequiredAction action="like this story" onAuthSuccess={handleLike}>
+          <button
+            className={`flex items-center gap-2 transition-colors ${
+              isLiked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'
+            }`}
+          >
+            <svg className="w-5 h-5" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span>{likeCount}</span>
+          </button>
+        </AuthRequiredAction>
 
-        <button
-          onClick={toggleComments}
-          className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          <span>{commentCount}</span>
-        </button>
+        <AuthRequiredAction action="comment on this story" onAuthSuccess={toggleComments}>
+          <button
+            className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span>{commentCount}</span>
+          </button>
+        </AuthRequiredAction>
       </div>
 
       {/* Comments Section */}
@@ -266,18 +273,20 @@ export default function StoryCard({ story, currentUserId, onLike, onComment }: S
           {/* Comments List */}
           <div className="space-y-3">
             {comments.map((comment) => (
-                              <div key={comment.id} className="flex gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    {comment.user_id.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-white text-sm">User {comment.user_id}</span>
-                      <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
-                    </div>
-                    <p className="text-gray-300 text-sm">{comment.content}</p>
-                  </div>
+              <div key={comment.id} className="flex gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  {comment.user_id.charAt(0).toUpperCase()}
                 </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-white text-sm">
+                      {comment.user_id.startsWith('user-') ? `User ${comment.user_id.split('-')[1]}` : comment.user_id}
+                    </span>
+                    <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
+                  </div>
+                  <p className="text-gray-300 text-sm">{comment.content}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>

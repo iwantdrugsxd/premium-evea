@@ -22,4 +22,4 @@ SELECT
   created_at
 FROM public.admin_settings 
 ORDER BY id DESC;
- POST /api/event-requests/update-package 200 in 370ms
+ 

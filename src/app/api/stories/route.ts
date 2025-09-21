@@ -16,52 +16,33 @@ const cloudinaryConfig = {
 // Upload image to Cloudinary
 async function uploadToCloudinary(fileBuffer: Buffer, fileName: string): Promise<string> {
   try {
-    console.log('=== CLOUDINARY UPLOAD START ===');
-    console.log('File name:', fileName);
-    console.log('File size:', fileBuffer.length, 'bytes');
-    
     // Check if Cloudinary is configured
     if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
       throw new Error('Cloudinary configuration is incomplete. Please check your environment variables.');
     }
     
-    console.log('Cloudinary config check passed');
-    
     // Convert buffer to base64
     const base64Image = fileBuffer.toString('base64');
     const dataURI = `data:image/jpeg;base64,${base64Image}`;
-    
-    console.log('Base64 conversion completed, length:', base64Image.length);
 
     const formData = new FormData();
     formData.append('file', dataURI);
     formData.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET || 'evea_stories');
     formData.append('folder', 'evea/stories');
 
-    console.log('FormData prepared, upload_preset:', process.env.CLOUDINARY_UPLOAD_PRESET);
-
     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloud_name}/image/upload`;
-    console.log('Upload URL:', uploadUrl);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
     });
 
-    console.log('Cloudinary response status:', response.status);
-    console.log('Cloudinary response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Cloudinary upload failed:', errorData);
       throw new Error(`Cloudinary upload failed: ${response.status} ${response.statusText} - ${errorData}`);
     }
 
     const data = await response.json();
-    console.log('Cloudinary response data:', data);
-    console.log('Image uploaded successfully:', data.secure_url);
-    console.log('=== CLOUDINARY UPLOAD END ===');
-    
     return data.secure_url;
   } catch (error) {
     console.error('Error in uploadToCloudinary:', error);
@@ -149,8 +130,6 @@ export async function POST(request: NextRequest) {
     const tags = JSON.parse(formData.get('tags') as string || '[]');
     const userId = formData.get('userId') as string;
 
-    console.log('Received form data:', { title, content, eventType, location, date, tags, userId });
-
     if (!title || !content || !eventType || !userId) {
       return NextResponse.json(
         { error: 'Missing required fields', received: { title, content, eventType, userId } },
@@ -165,20 +144,15 @@ export async function POST(request: NextRequest) {
     const imageFiles = formData.getAll('images') as File[];
     const imageUrls: string[] = [];
 
-    console.log(`Processing ${imageFiles.length} images...`);
-
     for (const file of imageFiles) {
       if (file && file.size > 0) {
         try {
-          console.log(`Uploading image: ${file.name}, size: ${file.size} bytes`);
-          
           // Convert File to Buffer
           const arrayBuffer = await file.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           
           const imageUrl = await uploadToCloudinary(buffer, file.name);
           imageUrls.push(imageUrl);
-          console.log(`Successfully uploaded: ${imageUrl}`);
         } catch (error) {
           console.error(`Error uploading image ${file.name}:`, error);
           
@@ -186,12 +160,9 @@ export async function POST(request: NextRequest) {
           // In production, you might want to handle this differently
           const placeholderUrl = `https://via.placeholder.com/400x300/666666/FFFFFF?text=Upload+Failed:+${file.name}`;
           imageUrls.push(placeholderUrl);
-          console.log(`Added placeholder URL for failed upload: ${placeholderUrl}`);
         }
       }
     }
-
-    console.log(`Final image URLs:`, imageUrls);
 
     // Create story in database
     const storyData = {
@@ -207,8 +178,6 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     };
 
-    console.log('Inserting story data:', storyData);
-
     const { data: story, error } = await supabase
       .from('community_stories')
       .insert(storyData)
@@ -219,8 +188,6 @@ export async function POST(request: NextRequest) {
       console.error('Database error:', error);
       throw error;
     }
-
-    console.log('Story created successfully:', story);
 
     return NextResponse.json({
       success: true,
