@@ -41,12 +41,12 @@ export default function Step2ServiceSelection({ selectedServices, onUpdateServic
                 {selectedServices.length} of {eventServices.length} selected
               </div>
             </div>
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {eventServices.map((service: any) => (
                 <div
                   key={service.id}
                   onClick={() => toggleService(service.service_name)}
-                  className={`group relative p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer min-w-[280px] max-w-[320px] ${
+                  className={`group relative p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer h-full ${
                     selectedServices.includes(service.service_name)
                       ? 'border-purple-500 bg-gradient-to-br from-purple-500/20 to-pink-500/20 shadow-lg shadow-purple-500/25'
                       : 'border-white/10 bg-white/5 hover:border-purple-500/50 hover:bg-purple-500/10'
@@ -67,22 +67,26 @@ export default function Step2ServiceSelection({ selectedServices, onUpdateServic
 
                   {/* Service content */}
                   <div className="pr-8">
-                    <h4 className="font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
+                    <h4 className="font-bold text-white mb-2 group-hover:text-purple-300 transition-colors text-sm">
                       {service.service_name}
                     </h4>
-                    <p className="text-sm text-gray-400 mb-3 leading-relaxed">
+                    <p className="text-xs text-gray-400 mb-2 leading-relaxed overflow-hidden" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
                       {service.service_description}
                     </p>
                     
                     {/* Service badges */}
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="flex flex-wrap gap-1 mb-2">
                       {service.is_required && (
-                        <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
+                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
                           Required
                         </span>
                       )}
                       {service.is_popular && (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
+                        <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
                           Popular
                         </span>
                       )}
@@ -90,7 +94,7 @@ export default function Step2ServiceSelection({ selectedServices, onUpdateServic
 
                     {/* Price if available */}
                     {service.price && (
-                      <div className="text-sm font-semibold text-purple-400">
+                      <div className="text-xs font-semibold text-purple-400">
                         {service.price}
                       </div>
                     )}
