@@ -396,29 +396,45 @@ export default function VendorCardsSection() {
   const [error, setError] = useState(null);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [showVendorDetails, setShowVendorDetails] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 12,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
 
-  // Fetch vendors from API
-  useEffect(() => {
-    const fetchVendors = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/marketplace');
-        const result = await response.json();
-        
-        if (result.success) {
-          setVendors(result.vendors);
-        } else {
-          setError(result.error || 'Failed to fetch vendors');
-        }
-      } catch (err) {
-        console.error('Error fetching vendors:', err);
-        setError('Failed to load vendors');
-      } finally {
-        setLoading(false);
+  // Fetch vendors from API with pagination
+  const fetchVendors = async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/marketplace?page=${page}&limit=12`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setVendors(result.vendors);
+        setPagination(result.pagination || {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: result.vendors.length,
+          itemsPerPage: 12,
+          hasNextPage: false,
+          hasPrevPage: false
+        });
+      } else {
+        setError(result.error || 'Failed to fetch vendors');
       }
-    };
+    } catch (err) {
+      console.error('Error fetching vendors:', err);
+      setError('Failed to load vendors');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchVendors();
+  useEffect(() => {
+    fetchVendors(1);
   }, []);
 
   const handleViewDetails = (vendor) => {
@@ -527,8 +543,71 @@ export default function VendorCardsSection() {
           </motion.div>
         )}
 
-        {/* Results Count */}
-        {!loading && !error && vendors.length > 0 && (
+        {/* Pagination Controls */}
+        {!loading && !error && vendors.length > 0 && pagination.totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="mt-12 flex flex-col items-center gap-6"
+          >
+            {/* Results Count */}
+            <p className="text-gray-400 text-center">
+              Showing {vendors.length} of {pagination.totalItems} vendors
+            </p>
+            
+            {/* Pagination Buttons */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => fetchVendors(pagination.currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+                  pagination.hasPrevPage
+                    ? 'bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30'
+                    : 'bg-gray-500/10 border border-gray-500/20 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  const isActive = pageNum === pagination.currentPage;
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => fetchVendors(pageNum)}
+                      className={`w-10 h-10 rounded-xl font-semibold transition-all ${
+                        isActive
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                          : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => fetchVendors(pagination.currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+                  pagination.hasNextPage
+                    ? 'bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30'
+                    : 'bg-gray-500/10 border border-gray-500/20 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Results Count for single page */}
+        {!loading && !error && vendors.length > 0 && pagination.totalPages === 1 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -536,7 +615,7 @@ export default function VendorCardsSection() {
             className="mt-8 text-center"
           >
             <p className="text-gray-400">
-              Showing {vendors.length} of {vendors.length} vendors
+              Showing {vendors.length} of {pagination.totalItems} vendors
             </p>
           </motion.div>
         )}

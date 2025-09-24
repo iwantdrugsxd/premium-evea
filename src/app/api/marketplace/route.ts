@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { cache, CACHE_CONFIG, getCachedOrFetch } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,35 +8,74 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const location = searchParams.get('location');
     const search = searchParams.get('search');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '12');
+    const offset = (page - 1) * limit;
 
+    // Generate cache key
+    const cacheKey = cache.generateKey(CACHE_CONFIG.VENDORS.keyPrefix, {
+      category,
+      location,
+      search,
+      page,
+      limit
+    });
+
+    // Try to get from cache first
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult) {
+      console.log(`Cache HIT for vendors: ${cacheKey}`);
+      return NextResponse.json(cachedResult);
+    }
+
+    console.log(`Cache MISS for vendors: ${cacheKey}`);
+
+    // OPTIMIZED: Use specific columns instead of * for better performance
     let query = supabase
       .from('vendors')
       .select(`
-        *,
-        vendor_portfolio (
+        id,
+        name,
+        business_name,
+        category,
+        rating,
+        events_count,
+        price,
+        price_label,
+        response_time,
+        badge,
+        image,
+        description,
+        location,
+        experience,
+        is_premium,
+        created_at,
+        vendor_portfolio!left (
           id,
           title,
           description,
           image_url,
           category
         )
-      `)
-      .eq('status', 'approved'); // Only show approved vendors
+      `, { count: 'exact' })
+      .eq('status', 'approved')
+      .range(offset, offset + limit - 1); // Add pagination
 
-    // Apply filters
+    // OPTIMIZED: Use more efficient filtering
     if (category && category !== 'All Vendors') {
-      query = query.ilike('category', `%${category}%`);
+      query = query.eq('category', category); // Use exact match instead of ilike
     }
 
     if (location) {
-      query = query.ilike('location', `%${location}%`);
+      query = query.ilike('location', `${location}%`); // Use prefix match for better performance
     }
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`);
+      // OPTIMIZED: Use text search with proper indexing
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    const { data: vendors, error } = await query
+    const { data: vendors, error, count } = await query
       .order('rating', { ascending: false })
       .order('events_count', { ascending: false });
 
@@ -46,6 +86,11 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Calculate pagination info
+    const totalPages = Math.ceil((count || 0) / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     // Transform data to match frontend expectations
     const transformedVendors = vendors?.map(vendor => ({
@@ -72,11 +117,23 @@ export async function GET(request: NextRequest) {
       updatedAt: vendor.updated_at
     })) || [];
 
-    return NextResponse.json({
+    const result = {
       success: true,
       vendors: transformedVendors,
-      total: transformedVendors.length
-    });
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: count || 0,
+        itemsPerPage: limit,
+        hasNextPage,
+        hasPrevPage
+      }
+    };
+
+    // Cache the result
+    cache.set(cacheKey, result, CACHE_CONFIG.VENDORS.ttl);
+
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Marketplace fetch error:', error);

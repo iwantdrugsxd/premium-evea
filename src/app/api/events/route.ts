@@ -99,47 +99,31 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Filter events that have both services and packages
-    const eventsWithData = [];
-    
-    for (const event of allEvents) {
-      // Check if event has services
-      const { data: services, error: servicesError } = await supabase
-        .from('event_services')
-        .select('id')
-        .eq('event_id', event.id)
-        .limit(1);
+    // OPTIMIZED: Use single query with JOINs instead of N+1 queries
+    const { data: eventsWithData, error: joinError } = await supabase
+      .from('events')
+      .select(`
+        *,
+        event_services!inner(id),
+        event_packages!inner(id)
+      `)
+      .order('name');
 
-      if (servicesError) continue;
-
-      // Check if event has packages
-      const { data: packages, error: packagesError } = await supabase
-        .from('event_packages')
-        .select('id')
-        .eq('event_id', event.id)
-        .limit(1);
-
-      if (packagesError) continue;
-
-      // Only include events that have both services and packages
-      if (services.length > 0 && packages.length > 0) {
-        eventsWithData.push(event);
-      }
-    }
-
-    // If no events have both services and packages, return all events
-    if (eventsWithData.length === 0) {
-      console.warn('No events with both services and packages found, returning all events');
+    if (joinError) {
+      console.error('Join query error, falling back to all events:', joinError);
+      // Fallback to all events if join fails
       return NextResponse.json({
         success: true,
         data: allEvents,
-        message: 'No events with complete data found'
+        message: 'Using all events - join query failed'
       });
     }
 
+    // Return optimized results
     return NextResponse.json({
       success: true,
-      data: eventsWithData
+      data: eventsWithData || [],
+      message: eventsWithData?.length > 0 ? 'Events with services and packages found' : 'No events with complete data found'
     });
 
   } catch (error) {
