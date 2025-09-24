@@ -208,18 +208,6 @@ export default function ProcessStepper() {
           })}
         </div>
 
-        {/* Tagline */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="mt-16 text-center"
-        >
-          <p className="text-lg text-gray-300 font-medium">
-            Plan, Communicate, Celebrate, Remember – your event journey starts here!
-          </p>
-        </motion.div>
 
         {/* Progress Indicator */}
         <motion.div

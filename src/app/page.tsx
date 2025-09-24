@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/HeroSection';
+import ProcessStepper from '@/components/ProcessStepper';
 import PricingSection from '@/components/PricingSection';
 import VendorCardsSection from '@/components/VendorCardsSection';
 import TestimonialsMarquee from '@/components/TestimonialsMarquee';
@@ -31,6 +32,9 @@ export default function HomePage() {
       
       {/* Hero Section */}
       <HeroSection />
+      
+      {/* Process Stepper Section */}
+      <ProcessStepper />
 
       {/* Packages Section */}
       <PricingSection />
