@@ -150,7 +150,7 @@ export default function ProcessStepper() {
   const steps = [0, 1, 2, 3];
 
   return (
-    <section ref={containerRef} className="relative py-32 px-6 lg:px-8 bg-black/50">
+    <section ref={containerRef} className="relative py-32 px-6 lg:px-8 bg-black">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <motion.div
@@ -160,12 +160,20 @@ export default function ProcessStepper() {
           viewport={{ once: true }}
           className="text-center mb-20"
         >
-          <h2 className="text-4xl md:text-6xl font-black mb-8 text-white">
-            4 STEPS TO YOUR<br />
+          <div className="inline-block px-8 py-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-2xl mb-8 backdrop-blur-sm">
+            <span className="text-purple-300 text-sm font-bold tracking-wider uppercase">How It Works</span>
+          </div>
+          <h2 className="text-6xl md:text-8xl font-black mb-8 leading-tight">
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-              PERFECT EVENT
+              4 Steps
             </span>
+            <br />
+            to Your Perfect Event
           </h2>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-medium">
+            Our streamlined process ensures your event planning is effortless and stress-free. 
+            From concept to celebration, we handle every detail.
+          </p>
         </motion.div>
 
         {/* Steps Container - Horizontal Layout */}
