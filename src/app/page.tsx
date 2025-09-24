@@ -43,7 +43,7 @@ export default function HomePage() {
       <VendorCardsSection />
 
       {/* Community Section */}
-      <TestimonialsMarquee />
+      {/* <TestimonialsMarquee /> */}
 
       {/* CTA Section */}
       <section className="py-32 px-6 lg:px-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10">
