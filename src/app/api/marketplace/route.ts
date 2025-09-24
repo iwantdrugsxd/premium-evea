@@ -35,49 +35,43 @@ export async function GET(request: NextRequest) {
       .from('vendors')
       .select(`
         id,
-        name,
         business_name,
-        category,
-        rating,
-        events_count,
-        price,
-        price_label,
-        response_time,
-        badge,
-        image,
+        business_type,
+        average_rating,
+        total_events_completed,
+        price_range_min,
+        price_range_max,
         description,
-        location,
-        experience,
-        is_premium,
-        created_at,
-        vendor_portfolio!left (
-          id,
-          title,
-          description,
-          image_url,
-          category
-        )
+        city,
+        state,
+        email,
+        phone,
+        portfolio_images,
+        services_offered,
+        is_verified,
+        is_active,
+        created_at
       `, { count: 'exact' })
-      .eq('status', 'approved')
+      .eq('is_active', true)
       .range(offset, offset + limit - 1); // Add pagination
 
     // OPTIMIZED: Use more efficient filtering
     if (category && category !== 'All Vendors') {
-      query = query.eq('category', category); // Use exact match instead of ilike
+      query = query.eq('business_type', category); // Use exact match instead of ilike
     }
 
     if (location) {
-      query = query.ilike('location', `${location}%`); // Use prefix match for better performance
+      query = query.or(`city.ilike.%${location}%,state.ilike.%${location}%`); // Search in city and state
     }
 
     if (search) {
       // OPTIMIZED: Use text search with proper indexing
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      query = query.or(`business_name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
     const { data: vendors, error, count } = await query
-      .order('rating', { ascending: false })
-      .order('events_count', { ascending: false });
+      .order('average_rating', { ascending: false })
+      .order('total_events_completed', { ascending: false });
 
     if (error) {
       console.error('Database query error:', error);
@@ -95,26 +89,38 @@ export async function GET(request: NextRequest) {
     // Transform data to match frontend expectations
     const transformedVendors = vendors?.map(vendor => ({
       id: vendor.id,
-      name: vendor.name,
-      category: vendor.category,
-      rating: vendor.rating || 0,
-      events: vendor.events_count || 0,
-      price: vendor.price || 'Contact for pricing',
-      priceLabel: vendor.price_label || 'Custom Quote',
-      responseTime: vendor.response_time || 'Within 24 hours',
-      badge: vendor.badge || 'New',
-      image: vendor.image || 'default',
+      name: vendor.business_name,
+      business_name: vendor.business_name,
+      category: vendor.business_type,
+      rating: vendor.average_rating || 0,
+      events: vendor.total_events_completed || 0,
+      price: vendor.price_range_min ? `₹${vendor.price_range_min} - ₹${vendor.price_range_max || 'Contact'}` : 'Contact for pricing',
+      priceLabel: vendor.price_range_min ? 'Price Range' : 'Custom Quote',
+      responseTime: 'Within 24 hours', // Default value
+      badge: vendor.is_verified ? 'Verified' : 'New',
+      image: Array.isArray(vendor.portfolio_images) && vendor.portfolio_images.length > 0 
+        ? vendor.portfolio_images[0] 
+        : '/api/placeholder/400/300',
       description: vendor.description,
       
-      location: vendor.location,
-      experience: vendor.experience || 'Not specified',
+      location: `${vendor.city}, ${vendor.state}`,
+      experience: 'Not specified', // Default value
       email: vendor.email,
-      serviceAreas: vendor.service_areas || [],
+      phone: vendor.phone,
+      serviceAreas: [], // Will be populated from service_areas table if needed
       servicesOffered: vendor.services_offered || [],
-      portfolio: vendor.vendor_portfolio || [],
-      reviews: [], // Will be populated from separate reviews table if needed
+      portfolio: Array.isArray(vendor.portfolio_images) 
+        ? vendor.portfolio_images.map((img, index) => ({
+            id: index,
+            title: `Portfolio Image ${index + 1}`,
+            description: 'Portfolio image',
+            image_url: img,
+            category: 'portfolio'
+          }))
+        : [],
+      reviews: [], // Will be populated from simple_reviews table if needed
       createdAt: vendor.created_at,
-      updatedAt: vendor.updated_at
+      updatedAt: vendor.created_at
     })) || [];
 
     const result = {

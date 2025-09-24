@@ -87,7 +87,7 @@ function VendorCard({ vendor, index, onViewDetails }) {
         {/* Image Section */}
         <div className="relative h-64 overflow-hidden">
           <img
-            src={vendor.portfolio_images?.[0] || vendor.image || '/api/placeholder/400/300'}
+            src={vendor.image || '/api/placeholder/400/300'}
             alt={vendor.business_name || vendor.name}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
@@ -108,11 +108,11 @@ function VendorCard({ vendor, index, onViewDetails }) {
           </div>
 
           {/* Premium Badge */}
-          {vendor.is_premium && (
+          {vendor.badge === 'Verified' && (
             <div className="absolute top-5 right-5">
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-sm font-bold shadow-lg">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-green-400 to-emerald-500 text-black text-sm font-bold shadow-lg">
                 <Crown className="w-4 h-4" />
-                PREMIUM
+                VERIFIED
               </div>
             </div>
           )}
