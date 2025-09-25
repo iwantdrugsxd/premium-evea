@@ -474,34 +474,9 @@ export default function PlanEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden pt-24" style={{ cursor: 'none' }}>
-
-      {/* Aurora Background */}
-      <div className="fixed inset-0 -z-10 opacity-30">
-        <div className="absolute w-[200%] h-[200%] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent via-pink-500/30 to-transparent animate-spin" 
-             style={{ animation: 'aurora 15s linear infinite' }}></div>
-      </div>
-
-      {/* Custom Cursor */}
-      <div 
-        className="fixed w-2.5 h-2.5 bg-purple-500 rounded-full pointer-events-none z-[9999] transition-transform duration-150 mix-blend-screen"
-        style={{ 
-          left: cursorPosition.x, 
-          top: cursorPosition.y,
-          transform: isHovering ? 'scale(2)' : 'scale(1)'
-        }}
-      ></div>
-      <div 
-        className="fixed w-8 h-8 border-2 border-purple-500/50 rounded-full pointer-events-none z-[9998] transition-all duration-150"
-        style={{ 
-          left: cursorPosition.x - 15, 
-          top: cursorPosition.y - 15,
-          transform: isHovering ? 'scale(1.5)' : 'scale(1)'
-        }}
-      ></div>
-
+    <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Main Container */}
-      <div className="pt-16 pb-20 px-12 max-w-6xl mx-auto">
+      <div className="pt-4 sm:pt-8 md:pt-16 pb-8 sm:pb-12 md:pb-20 px-4 sm:px-6 md:px-8 lg:px-12 max-w-6xl mx-auto">
 
 
 
@@ -517,24 +492,24 @@ export default function PlanEventPage() {
         )}
 
         {/* Step Content */}
-        <div className="bg-gradient-to-br from-white/5 to-white/2 border border-white/10 rounded-2xl p-10">
+        <div className="bg-gradient-to-br from-white/5 to-white/2 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10">
           {/* Step 1: Event Type Selection */}
           {currentStep === 1 && (
             <div>
-              <h2 className="text-4xl font-black mb-2.5 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent">
-                What type of event are you planning?
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 md:mb-4 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent">
+                What event are you planning?
               </h2>
-              <p className="text-gray-400 mb-10 text-lg leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg text-gray-400 mb-6 sm:mb-8 md:mb-10 leading-relaxed">
                 Choose the category that best matches your celebration
               </p>
               
               {loading ? (
-                <div className="flex justify-center items-center py-20">
-                  <div className="w-8 h-8 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-                  <span className="ml-3 text-gray-400">Loading events...</span>
+                <div className="flex justify-center items-center py-12 sm:py-16 md:py-20">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                  <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-400">Loading events...</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 mb-6 sm:mb-8 md:mb-10">
                   {events.map((event) => (
                     <div
                       key={event.id}
@@ -545,10 +520,10 @@ export default function PlanEventPage() {
                           nextStep();
                         }, 300);
                       }}
-                      className={`relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 h-32 group ${
+                      className={`relative overflow-hidden rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 h-24 sm:h-28 md:h-32 group ${
                         formData.eventType === event.name.toLowerCase() 
-                          ? 'ring-4 ring-purple-500 ring-opacity-70 shadow-2xl shadow-purple-500/30' 
-                          : 'hover:shadow-xl hover:shadow-purple-500/20'
+                          ? 'ring-2 sm:ring-4 ring-purple-500 ring-opacity-70 shadow-lg sm:shadow-2xl shadow-purple-500/30' 
+                          : 'hover:shadow-lg sm:hover:shadow-xl hover:shadow-purple-500/20'
                       }`}
                     >
                       {/* Background Image */}
@@ -573,15 +548,15 @@ export default function PlanEventPage() {
                       
                       {/* Event Type Name */}
                       <div className="relative h-full flex items-center justify-center">
-                        <span className="text-white font-bold text-xl tracking-wide text-center px-4 drop-shadow-lg">
+                        <span className="text-white font-bold text-sm sm:text-base md:text-lg lg:text-xl tracking-wide text-center px-2 sm:px-4 drop-shadow-lg">
                           {event.name}
                         </span>
                       </div>
                       
                       {/* Selection Indicator */}
                       {formData.eventType === event.name.toLowerCase() && (
-                        <div className="absolute top-3 right-3 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-5 h-5 sm:w-6 sm:h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
