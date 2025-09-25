@@ -125,7 +125,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl lg:text-8xl font-black leading-none mb-8"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight mb-6"
             >
               Crafting<br />
               <span className="gradient-text">Dreams</span><br />
@@ -136,7 +136,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed"
+              className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 mb-8 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4"
             >
               EVEA is India's premier AI-powered event planning platform, transforming the way people celebrate life's most precious moments. We combine cutting-edge technology with human creativity to deliver extraordinary experiences.
             </motion.p>
@@ -146,7 +146,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16"
+              className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-14 md:mb-16 px-4"
             >
               {stats.map((stat, index) => (
                 <motion.div
@@ -156,9 +156,9 @@ export default function AboutPage() {
                   transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
                   className="text-center"
                 >
-                  <div className="text-purple-400 mb-4 flex justify-center">{stat.icon}</div>
-                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.number}</div>
-                  <div className="text-gray-400">{stat.label}</div>
+                  <div className="text-purple-400 mb-2 sm:mb-3 md:mb-4 flex justify-center">{stat.icon}</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2">{stat.number}</div>
+                  <div className="text-xs sm:text-sm md:text-base text-gray-400">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -167,33 +167,33 @@ export default function AboutPage() {
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-32 px-6 lg:px-8 bg-black/50">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 bg-black/50">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-6xl font-black mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black mb-4 sm:mb-6 md:mb-8">
                 Our <span className="gradient-text">Mission</span>
               </h2>
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 mb-6 sm:mb-8 leading-relaxed">
                 To democratize exceptional event planning by making professional services accessible to everyone. We believe every celebration deserves to be extraordinary, regardless of budget or scale.
               </p>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-400" />
-                  <span className="text-gray-300">AI-powered personalized recommendations</span>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm md:text-base text-gray-300">AI-powered personalized recommendations</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-400" />
-                  <span className="text-gray-300">Vetted network of premium vendors</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm md:text-base text-gray-300">Vetted network of premium vendors</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-400" />
-                  <span className="text-gray-300">End-to-end event management</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm md:text-base text-gray-300">End-to-end event management</span>
                 </div>
               </div>
             </motion.div>
@@ -204,15 +204,15 @@ export default function AboutPage() {
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-6xl font-black mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black mb-4 sm:mb-6 md:mb-8">
                 Our <span className="gradient-text">Vision</span>
               </h2>
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 mb-6 sm:mb-8 leading-relaxed">
                 To become the world's most trusted platform for event planning, where technology meets human creativity to create magical moments that last a lifetime.
               </p>
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8">
-                <h3 className="text-2xl font-bold text-white mb-4">By 2030, we aim to:</h3>
-                <ul className="space-y-3 text-gray-300">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">By 2030, we aim to:</h3>
+                <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm md:text-base text-gray-300">
                   <li>• Serve 1 million+ events annually</li>
                   <li>• Expand to 50+ countries</li>
                   <li>• Achieve 99.9% client satisfaction</li>
@@ -225,24 +225,24 @@ export default function AboutPage() {
       </section>
 
       {/* Values Section */}
-      <section className="py-32 px-6 lg:px-8">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-24"
+            className="text-center mb-12 sm:mb-16 md:mb-20 lg:mb-24"
           >
-            <h2 className="text-5xl md:text-7xl font-black mb-8">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-4 sm:mb-6 md:mb-8">
               Our <span className="gradient-text">Values</span>
             </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-3xl mx-auto px-4">
               The principles that guide every decision we make and every event we create.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {values.map((value, index) => (
               <motion.div
                 key={index}
@@ -250,11 +250,11 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 text-center hover:bg-white/10 transition-all"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-center hover:bg-white/10 transition-all"
               >
-                <div className="text-purple-400 mb-6 flex justify-center">{value.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-4">{value.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{value.description}</p>
+                <div className="text-purple-400 mb-3 sm:mb-4 md:mb-6 flex justify-center">{value.icon}</div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 md:mb-4">{value.title}</h3>
+                <p className="text-xs sm:text-sm md:text-base text-gray-400 leading-relaxed">{value.description}</p>
               </motion.div>
             ))}
           </div>

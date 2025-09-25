@@ -203,7 +203,7 @@ export default function CareersPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-                      className="hero-title"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight mb-6"
         >
           Build The Future<br />
           <span className="gradient-text">Of Events</span>
@@ -213,7 +213,7 @@ export default function CareersPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xl text-gray-400 max-w-3xl mx-auto"
+          className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-3xl mx-auto px-4"
         >
           We&apos;re hiring passionate individuals to revolutionize event management. 
           Join us in creating extraordinary experiences.
@@ -221,21 +221,21 @@ export default function CareersPage() {
       </section>
 
       {/* Values Section */}
-      <section className="py-32 px-6 lg:px-8">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-24"
+            className="text-center mb-12 sm:mb-16 md:mb-20 lg:mb-24"
           >
-            <h2 className="text-5xl md:text-7xl font-black mb-8">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-4 sm:mb-6 md:mb-8">
               Our <span className="gradient-text">Values</span>
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {values.map((value, index) => (
               <motion.div
                 key={value.title}
@@ -243,13 +243,13 @@ export default function CareersPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="text-center card-hover"
+                className="text-center card-hover p-4 sm:p-6"
               >
-                <div className="w-20 h-20 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6">
                   {value.icon}
                 </div>
-                <h3 className="text-2xl font-bold mb-4">{value.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{value.description}</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 md:mb-4">{value.title}</h3>
+                <p className="text-xs sm:text-sm md:text-base text-gray-400 leading-relaxed">{value.description}</p>
               </motion.div>
             ))}
           </div>
@@ -257,24 +257,24 @@ export default function CareersPage() {
       </section>
 
       {/* Open Positions */}
-      <section className="py-32 px-6 lg:px-8 bg-black/50">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 bg-black/50">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-24"
+            className="text-center mb-12 sm:mb-16 md:mb-20 lg:mb-24"
           >
-            <h2 className="text-5xl md:text-7xl font-black mb-8">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-4 sm:mb-6 md:mb-8">
               Open <span className="gradient-text">Positions</span>
             </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-3xl mx-auto px-4">
               Find your perfect role in our growing team of event management professionals.
             </p>
           </motion.div>
 
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-6 md:space-y-8">
             {positions.map((position, index) => (
               <motion.div
                 key={position.title}
@@ -282,39 +282,39 @@ export default function CareersPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 card-hover"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 card-hover"
               >
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                   {/* Position Info */}
                   <div className="lg:col-span-2">
-                    <h3 className="text-3xl font-bold mb-2">{position.title}</h3>
-                    <p className="text-purple-500 font-semibold mb-4">{position.role}</p>
-                    <p className="text-gray-400 mb-6 leading-relaxed">{position.description}</p>
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">{position.title}</h3>
+                    <p className="text-purple-500 font-semibold mb-2 sm:mb-3 md:mb-4 text-sm sm:text-base">{position.role}</p>
+                    <p className="text-xs sm:text-sm md:text-base text-gray-400 mb-4 sm:mb-6 leading-relaxed">{position.description}</p>
                     
-                    <div className="flex flex-wrap gap-4 mb-6">
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <MapPin className="w-4 h-4" />
+                    <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+                      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-400">
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                         {position.location}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Clock className="w-4 h-4" />
+                      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-400">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                         {position.type}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <DollarSign className="w-4 h-4" />
+                      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-400">
+                        <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
                         {position.salary}
                       </div>
                     </div>
                   </div>
 
                   {/* Requirements & Benefits */}
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     <div>
-                      <h4 className="font-semibold mb-3">Requirements</h4>
-                      <ul className="space-y-2">
+                      <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">Requirements</h4>
+                      <ul className="space-y-1 sm:space-y-2">
                         {position.requirements.map((req, reqIndex) => (
-                          <li key={reqIndex} className="text-sm text-gray-400 flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <li key={reqIndex} className="text-xs sm:text-sm text-gray-400 flex items-start gap-1 sm:gap-2">
+                            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-purple-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                             {req}
                           </li>
                         ))}
@@ -322,11 +322,11 @@ export default function CareersPage() {
                     </div>
 
                     <div>
-                      <h4 className="font-semibold mb-3">Benefits</h4>
-                      <ul className="space-y-2">
+                      <h4 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">Benefits</h4>
+                      <ul className="space-y-1 sm:space-y-2">
                         {position.benefits.map((benefit, benefitIndex) => (
-                          <li key={benefitIndex} className="text-sm text-gray-400 flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 bg-pink-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <li key={benefitIndex} className="text-xs sm:text-sm text-gray-400 flex items-start gap-1 sm:gap-2">
+                            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-pink-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
                             {benefit}
                           </li>
                         ))}
@@ -335,10 +335,10 @@ export default function CareersPage() {
 
                     <button 
                       onClick={() => router.push(position.title === "Event Partners" ? '/event-partner' : '/vendor-onboarding')}
-                      className="w-full py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2 sm:py-3 px-4 sm:px-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg sm:rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       Apply Now
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>
