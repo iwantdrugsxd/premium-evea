@@ -4,8 +4,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Phone, Star, Users, Calendar, Award, CheckCircle, Play, Sparkles, Heart, Crown, Zap, Camera, Utensils, Palette } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
+// import Navigation from '@/components/Navigation'; // Commented out for now
+// import Footer from '@/components/Footer'; // Commented out for now
 import HeroSection from '@/components/HeroSection';
 import ProcessStepper from '@/components/ProcessStepper';
 import PricingSection from '@/components/PricingSection';
@@ -27,8 +27,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
-      {/* Navigation */}
-      <Navigation />
+      {/* Navigation - Commented out for now */}
+      {/* <Navigation /> */}
       
       {/* Hero Section */}
       <HeroSection />
