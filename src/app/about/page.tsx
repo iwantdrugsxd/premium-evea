@@ -107,7 +107,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center relative px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
