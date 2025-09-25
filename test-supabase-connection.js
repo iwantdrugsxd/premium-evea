@@ -1,70 +1,110 @@
-const { createClient } = require('@supabase/supabase-js');
+#!/usr/bin/env node
+
+// Script to test Supabase connection and debug the issue
+// Run with: node test-supabase-connection.js
+
 require('dotenv').config({ path: '.env.local' });
 
-console.log('🔍 Testing Supabase Connection...\n');
+const { createClient } = require('@supabase/supabase-js');
 
-// Check environment variables
-console.log('Environment Variables:');
-console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET');
-console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
+// Supabase configuration
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.log('\n❌ Missing required environment variables!');
-  console.log('Please check your .env.local file.');
-  process.exit(1);
-}
+console.log('🔍 Testing Supabase connection...\n');
+console.log('Supabase URL:', supabaseUrl);
+console.log('Service Key exists:', !!supabaseServiceKey);
+console.log('Service Key (first 20 chars):', supabaseServiceKey?.substring(0, 20) + '...');
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-async function testConnection() {
+async function testSupabaseConnection() {
   try {
-    console.log('\n🔗 Testing database connection...');
-    
-    // Test basic connection
-    const { data, error } = await supabase
-      .from('users')
-      .select('count')
+    // Test 1: Check if we can connect to the database
+    console.log('\n1. Testing database connection...');
+    const { data: testData, error: testError } = await supabase
+      .from('vendors')
+      .select('id')
       .limit(1);
-    
-    if (error) {
-      console.log('❌ Database connection failed:');
-      console.log('Error:', error.message);
-      console.log('Code:', error.code);
-      console.log('Details:', error.details);
-      console.log('Hint:', error.hint);
-      
-      if (error.message.includes('relation "users" does not exist')) {
-        console.log('\n💡 Solution: You need to run the database schema first!');
-        console.log('Run this SQL in your Supabase SQL Editor:');
-        console.log('1. Go to your Supabase project dashboard');
-        console.log('2. Navigate to SQL Editor');
-        console.log('3. Run the content from fix-auth-database-schema.sql');
-      }
+
+    if (testError) {
+      console.log('❌ Database connection error:', testError.message);
+      console.log('Error code:', testError.code);
+      console.log('Error details:', testError.details);
+      console.log('Error hint:', testError.hint);
     } else {
-      console.log('✅ Database connection successful!');
-      console.log('Users table exists and is accessible.');
+      console.log('✅ Database connection successful');
+      console.log('Test data:', testData);
     }
-  } catch (err) {
-    console.log('❌ Connection error:', err.message);
-    
-    if (err.message.includes('fetch failed')) {
-      console.log('\n💡 Possible solutions:');
-      console.log('1. Check your Supabase URL is correct');
-      console.log('2. Check your Service Role Key is correct');
-      console.log('3. Make sure your Supabase project is active');
-      console.log('4. Check your internet connection');
+
+    // Test 2: Check what tables exist
+    console.log('\n2. Checking available tables...');
+    const { data: tables, error: tablesError } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public');
+
+    if (tablesError) {
+      console.log('❌ Error getting tables:', tablesError.message);
+    } else {
+      console.log('✅ Available tables:');
+      tables.forEach(table => {
+        console.log(`  - ${table.table_name}`);
+      });
     }
+
+    // Test 3: Check vendors table structure
+    console.log('\n3. Checking vendors table structure...');
+    const { data: columns, error: columnsError } = await supabase
+      .from('information_schema.columns')
+      .select('column_name, data_type')
+      .eq('table_name', 'vendors')
+      .eq('table_schema', 'public')
+      .order('ordinal_position');
+
+    if (columnsError) {
+      console.log('❌ Error getting columns:', columnsError.message);
+    } else {
+      console.log('✅ Vendors table columns:');
+      columns.forEach(col => {
+        console.log(`  - ${col.column_name}: ${col.data_type}`);
+      });
+    }
+
+    // Test 4: Try to insert a test record
+    console.log('\n4. Testing insert...');
+    const { data: insertData, error: insertError } = await supabase
+      .from('vendors')
+      .insert({
+        business_name: 'Test Vendor',
+        business_type: 'Test Type',
+        contact_person_name: 'Test Person',
+        phone: '1234567890',
+        email: 'test@example.com',
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        description: 'Test description',
+        is_active: true
+      })
+      .select();
+
+    if (insertError) {
+      console.log('❌ Error inserting test vendor:', insertError.message);
+    } else {
+      console.log('✅ Successfully inserted test vendor:', insertData[0].id);
+      
+      // Clean up
+      await supabase
+        .from('vendors')
+        .delete()
+        .eq('id', insertData[0].id);
+      console.log('🧹 Cleaned up test vendor');
+    }
+
+  } catch (error) {
+    console.error('❌ Unexpected error:', error.message);
   }
 }
 
-testConnection();
+// Run the script
+testSupabaseConnection().catch(console.error);

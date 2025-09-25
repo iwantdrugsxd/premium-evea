@@ -56,36 +56,41 @@ export default function SignupPage() {
     }
   };
 
-  const handleOTPVerified = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Now create the account after email verification
-      const response = await fetch('/api/auth/passport-signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+  const handleOTPVerified = async (userData?: any) => {
+    if (userData) {
+      // Account was created during OTP verification
+      alert('Account created successfully! Please sign in.');
+      window.location.href = '/login';
+    } else {
+      // OTP verified but account creation failed, try again
+      setIsLoading(true);
+      
+      try {
+        const response = await fetch('/api/auth/passport-signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (response.ok) {
-        alert('Account created successfully! Please sign in.');
-        // Redirect to login page
-        window.location.href = '/login';
-      } else {
-        const errorMessage = data.error || 'Signup failed';
-        alert(`Signup failed: ${errorMessage}`);
+        if (response.ok) {
+          alert('Account created successfully! Please sign in.');
+          window.location.href = '/login';
+        } else {
+          const errorMessage = data.error || 'Signup failed';
+          alert(`Signup failed: ${errorMessage}`);
+          setShowOTPVerification(false);
+        }
+      } catch (error) {
+        console.error('Signup error:', error);
+        alert('Signup failed. Please try again.');
         setShowOTPVerification(false);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Signup error:', error);
-      alert('Signup failed. Please try again.');
-      setShowOTPVerification(false);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -118,14 +123,16 @@ export default function SignupPage() {
   // Show OTP verification if email verification is in progress
   if (showOTPVerification) {
     return (
-      <div className="min-h-screen flex items-center justify-center relative px-6 lg:px-8">
-        <OTPVerification
-          email={formData.email}
-          onVerified={handleOTPVerified}
-          onBack={() => setShowOTPVerification(false)}
-          onResend={handleResendOTP}
-        />
-      </div>
+      <OTPVerification
+        email={formData.email}
+        onSuccess={handleOTPVerified}
+        onBack={() => setShowOTPVerification(false)}
+        userData={{
+          fullName: formData.fullName,
+          phone: formData.mobileNumber,
+          password: formData.password
+        }}
+      />
     );
   }
 

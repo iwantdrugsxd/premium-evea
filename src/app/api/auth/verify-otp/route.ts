@@ -1,73 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { verifyOTP } from '@/lib/email-otp';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, otp } = await request.json();
+    const { email, otp, userData } = await request.json();
 
     if (!email || !otp) {
       return NextResponse.json(
-        { error: 'Email and OTP are required' },
+        { success: false, error: 'Email and OTP are required' },
         { status: 400 }
       );
     }
 
     // Verify OTP
-    const { data: verification, error: fetchError } = await supabase
-      .from('email_verifications')
-      .select('*')
-      .eq('email', email)
-      .eq('otp', otp)
-      .eq('verified', false)
-      .single();
-
-    if (fetchError || !verification) {
-      return NextResponse.json(
-        { error: 'Invalid OTP' },
-        { status: 400 }
-      );
-    }
-
-    // Check if OTP has expired
-    const now = new Date();
-    const expiresAt = new Date(verification.expires_at);
+    const otpResult = verifyOTP(email, otp);
     
-    if (now > expiresAt) {
+    if (!otpResult.success) {
       return NextResponse.json(
-        { error: 'OTP has expired' },
+        { success: false, error: otpResult.message },
         { status: 400 }
       );
     }
 
-    // Mark OTP as verified
-    const { error: updateError } = await supabase
-      .from('email_verifications')
-      .update({ verified: true })
-      .eq('email', email)
-      .eq('otp', otp);
+    // If userData is provided, create user account
+    if (userData) {
+      try {
+        // Create user in Supabase
+        const { data: user, error: userError } = await supabase.auth.signUp({
+          email: email,
+          password: userData.password,
+          options: {
+            data: {
+              full_name: userData.fullName,
+              phone: userData.phone
+            }
+          }
+        });
 
-    if (updateError) {
-      console.error('Error updating verification status:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to verify OTP' },
-        { status: 500 }
-      );
+        if (userError) {
+          return NextResponse.json(
+            { success: false, error: userError.message },
+            { status: 400 }
+          );
+        }
+
+        // Create user profile in users table
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            email: email,
+            full_name: userData.fullName,
+            phone: userData.phone
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // Don't fail the request if profile creation fails
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Account created successfully',
+          user: user.user
+        });
+      } catch (error) {
+        console.error('User creation error:', error);
+        return NextResponse.json(
+          { success: false, error: 'Failed to create account' },
+          { status: 500 }
+        );
+      }
     }
 
+    // Just verify OTP without creating account
     return NextResponse.json({
       success: true,
       message: 'Email verified successfully'
     });
 
   } catch (error) {
-    console.error('Error in verify-otp API:', error);
+    console.error('Verify OTP error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

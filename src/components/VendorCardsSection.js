@@ -78,10 +78,10 @@ function VendorCard({ vendor, index, onViewDetails }) {
     >
       <div
         className={`
-          relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/10 to-white/5 
-          backdrop-blur-xl border border-white/20 shadow-2xl h-full flex flex-col
-          transition-all duration-700 group-hover:scale-105 group-hover:shadow-3xl
-          ${isHovered ? 'shadow-3xl scale-105' : 'shadow-xl'}
+          relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 
+          backdrop-blur-xl border border-white/20 shadow-xl h-full flex flex-col
+          transition-all duration-500 group-hover:scale-102 group-hover:shadow-2xl
+          ${isHovered ? 'shadow-2xl scale-102' : 'shadow-lg'}
         `}
       >
         {/* Image Section */}
@@ -98,69 +98,61 @@ function VendorCard({ vendor, index, onViewDetails }) {
           {/* Category Badge */}
           <div className="absolute top-5 left-5">
             <div className={`
-              flex items-center gap-2 px-4 py-2 rounded-2xl
+              flex items-center gap-1.5 px-3 py-1.5 rounded-xl
               bg-gradient-to-r ${getCategoryColor(vendor.category)} text-white
               backdrop-blur-md border border-white/30 shadow-lg
             `}>
               {getCategoryIcon(vendor.category)}
-              <span className="text-sm font-semibold">{vendor.category?.split(',')[0]?.trim() || 'Event Services'}</span>
+              <span className="text-xs font-medium">{vendor.category?.split(',')[0]?.trim() || 'Event Services'}</span>
             </div>
           </div>
 
-          {/* Premium Badge */}
-          {vendor.badge === 'Verified' && (
-            <div className="absolute top-5 right-5">
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-green-400 to-emerald-500 text-black text-sm font-bold shadow-lg">
-                <Crown className="w-4 h-4" />
-                VERIFIED
-              </div>
-            </div>
-          )}
+          {/* Premium Badge - Removed green tag */}
 
           {/* Rating */}
-          <div className="absolute bottom-5 left-5">
-            <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/20">
-              <Star className="w-5 h-5 text-yellow-400 fill-current" />
-              <span className="text-white text-sm font-semibold">{vendor.rating || '4.5'}</span>
+          <div className="absolute bottom-4 left-4">
+            <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-xl px-3 py-1.5 border border-white/20">
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+              <span className="text-white text-xs font-semibold">{vendor.rating || '4.5'}</span>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="absolute top-5 right-5 flex gap-2">
-            <button className="w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-red-500/80 transition-all duration-300 hover:scale-110">
-              <Heart className="w-4 h-4" />
+          <div className="absolute top-4 right-4 flex gap-1.5">
+            <button className="w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-red-500/80 transition-all duration-300 hover:scale-110">
+              <Heart className="w-3.5 h-3.5" />
             </button>
-            <button className="w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-blue-500/80 transition-all duration-300 hover:scale-110">
-              <Share2 className="w-4 h-4" />
+            <button className="w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-blue-500/80 transition-all duration-300 hover:scale-110">
+              <Share2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-7 flex-1 flex flex-col">
+        <div className="p-6 flex-1 flex flex-col">
           {/* Business Name */}
-          <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors duration-300">
+          <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-300 transition-colors duration-300 line-clamp-2">
             {vendor.business_name || vendor.name}
           </h3>
 
           {/* Location */}
-          <div className="flex items-center gap-2 text-gray-300 text-sm mb-4">
+          <div className="flex items-center gap-2 text-gray-300 text-sm mb-3">
             <MapPin className="w-4 h-4 text-purple-400" />
             <span className="font-medium">{vendor.location || 'Multiple Locations'}</span>
           </div>
 
           {/* Description */}
-          <p className="text-gray-300 text-sm mb-6 line-clamp-3 leading-relaxed flex-1">
+          <p className="text-gray-300 text-sm mb-5 line-clamp-2 leading-relaxed flex-1">
             {vendor.description || 'Professional event services with attention to detail and exceptional quality.'}
           </p>
 
           {/* Action Button */}
           <button
             onClick={() => onViewDetails(vendor)}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 group-hover:shadow-xl group-hover:scale-105"
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:scale-105"
           >
             View Details
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
           </button>
         </div>
 
@@ -243,11 +235,12 @@ function VendorDetailsModal({ vendor, isOpen, onClose }) {
               </div>
 
               <div className="grid md:grid-cols-2 gap-8 mb-8">
+                {/* Left Column - About Section */}
                 <div>
                   <h3 className="text-xl font-bold mb-4">About</h3>
                   <p className="text-gray-400 mb-6">{vendor.description}</p>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 mb-6">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Location:</span>
                       <span className="text-white">{vendor.location}</span>
@@ -257,17 +250,17 @@ function VendorDetailsModal({ vendor, isOpen, onClose }) {
                       <span className="text-white">{vendor.experience}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Email:</span>
-                      <span className="text-white">{vendor.email || 'Contact for details'}</span>
+                      <span className="text-gray-400">Events Completed:</span>
+                      <span className="text-white">{vendor.events}+</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Response Time:</span>
-                      <span className="text-white">{vendor.responseTime}</span>
+                      <span className="text-gray-400">Email:</span>
+                      <span className="text-white">{vendor.email || 'Contact for details'}</span>
                     </div>
                   </div>
 
                   {vendor.serviceAreas && vendor.serviceAreas.length > 0 && (
-                    <div className="mt-6">
+                    <div className="mb-6">
                       <h4 className="text-lg font-semibold mb-3">Service Areas</h4>
                       <div className="flex flex-wrap gap-2">
                         {vendor.serviceAreas.map((area, index) => (
@@ -280,7 +273,7 @@ function VendorDetailsModal({ vendor, isOpen, onClose }) {
                   )}
 
                   {vendor.servicesOffered && vendor.servicesOffered.length > 0 && (
-                    <div className="mt-6">
+                    <div className="mb-6">
                       <h4 className="text-lg font-semibold mb-3">Services Offered</h4>
                       <div className="flex flex-wrap gap-2">
                         {vendor.servicesOffered.map((service, index) => (
@@ -291,97 +284,64 @@ function VendorDetailsModal({ vendor, isOpen, onClose }) {
                       </div>
                     </div>
                   )}
-                </div>
 
-                <div className="mt-8 p-6 bg-white/5 rounded-2xl">
-                  <h3 className="text-xl font-bold mb-4">Pricing & Details</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Starting Price:</span>
-                      <span className="text-2xl font-bold text-purple-400">{vendor.price}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Price Label:</span>
-                      <span className="text-white">{vendor.priceLabel}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Events Completed:</span>
-                      <span className="text-white">{vendor.events}+</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Rating:</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-white">{vendor.rating}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Portfolio Section */}
-              {vendor.portfolio && vendor.portfolio.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold mb-4">Portfolio</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {vendor.portfolio.map((item, index) => (
-                      <div key={item.id || index} className="bg-white/5 rounded-xl overflow-hidden">
-                        <img 
-                          src={item.image_url} 
-                          alt={item.title}
-                          className="w-full h-32 object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzM0MTU1Ii8+CjxwYXRoIGQ9Ik02MCAxMDBMMTAwIDYwTDE0MCAxMDBMMTAwIDE0MEw2MCAxMDBaIiBmaWxsPSIjOTMzM0VBIi8+Cjwvc3ZnPgo=';
-                          }}
-                        />
-                        <div className="p-3">
-                          <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
-                          <p className="text-xs text-gray-400">{item.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Reviews Section */}
-              <div>
-                <h3 className="text-xl font-bold mb-4">Reviews</h3>
-                {vendor.reviews && vendor.reviews.length > 0 ? (
-                  <div className="space-y-4">
-                    {vendor.reviews.map((review, index) => (
-                      <div key={index} className="bg-white/5 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                className={`w-4 h-4 ${i < review.rating ? 'fill-current' : ''}`} 
-                              />
-                            ))}
+                  {/* Reviews Section */}
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3">Reviews</h4>
+                    {vendor.reviews && vendor.reviews.length > 0 ? (
+                      <div className="space-y-3">
+                        {vendor.reviews.map((review, index) => (
+                          <div key={index} className="bg-white/5 rounded-xl p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="flex text-yellow-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    className={`w-3 h-3 ${i < review.rating ? 'fill-current' : ''}`} 
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs text-gray-400">{review.name}</span>
+                            </div>
+                            <p className="text-sm text-gray-300">{review.comment}</p>
                           </div>
-                          <span className="text-sm text-gray-400">{review.name}</span>
-                        </div>
-                        <p className="text-gray-300">{review.comment}</p>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-center py-6 bg-white/5 rounded-xl">
+                        <Star className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400">No reviews yet</p>
+                        <p className="text-xs text-gray-500">Be the first to review this vendor</p>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-center py-8 bg-white/5 rounded-xl">
-                    <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-400">No reviews yet</p>
-                    <p className="text-sm text-gray-500">Be the first to review this vendor</p>
-                  </div>
-                )}
+                </div>
+
+                {/* Right Column - Portfolio Images Only */}
+                <div className="p-6 bg-white/5 rounded-2xl">
+                  {/* Portfolio Images Grid */}
+                  {vendor.portfolio && vendor.portfolio.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-bold mb-4">Portfolio</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {vendor.portfolio.map((item, index) => (
+                          <div key={item.id || index} className="bg-white/5 rounded-lg overflow-hidden">
+                            <img 
+                              src={item.image_url} 
+                              alt={item.title}
+                              className="w-full h-24 object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzM0MTU1Ii8+CjxwYXRoIGQ9Ik02MCAxMDBMMTAwIDYwTDE0MCAxMDBMMTAwIDE0MEw2MCAxMDBaIiBmaWxsPSIjOTMzM0VBIi8+Cjwvc3ZnPgo=';
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Contact Button */}
-              <div className="mt-8 pt-6 border-t border-white/10">
-                <button className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-2">
-                  <Phone className="w-5 h-5" />
-                  Contact Vendor
-                </button>
-              </div>
             </div>
           </motion.div>
         </motion.div>

@@ -1,39 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle, X } from 'lucide-react';
 
 interface OTPVerificationProps {
   email: string;
-  onVerified: () => void;
+  onSuccess: (userData?: any) => void;
   onBack: () => void;
-  onResend: () => void;
+  userData?: {
+    fullName: string;
+    phone: string;
+    password: string;
+  };
 }
 
-export default function OTPVerification({ email, onVerified, onBack, onResend }: OTPVerificationProps) {
+export default function OTPVerification({ email, onSuccess, onBack, userData }: OTPVerificationProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Countdown timer
+  // Auto-focus first input
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [timeLeft]);
+    inputRefs.current[0]?.focus();
+  }, []);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
+  // Handle OTP input
   const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) return; // Only allow single digit
+    if (value.length > 1) return; // Prevent multiple characters
     
     const newOtp = [...otp];
     newOtp[index] = value;
@@ -42,18 +39,29 @@ export default function OTPVerification({ email, onVerified, onBack, onResend }:
 
     // Auto-focus next input
     if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
+  // Handle backspace
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
+  // Handle paste
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
+    if (pastedData.length === 6) {
+      const newOtp = pastedData.split('');
+      setOtp(newOtp);
+      inputRefs.current[5]?.focus();
+    }
+  };
+
+  // Verify OTP
   const handleVerify = async () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) {
@@ -61,7 +69,7 @@ export default function OTPVerification({ email, onVerified, onBack, onResend }:
       return;
     }
 
-    setIsVerifying(true);
+    setIsLoading(true);
     setError('');
 
     try {
@@ -72,33 +80,55 @@ export default function OTPVerification({ email, onVerified, onBack, onResend }:
         },
         body: JSON.stringify({
           email,
-          otp: otpString
+          otp: otpString,
+          userData: userData
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        onVerified();
+      if (data.success) {
+        onSuccess(data.user);
       } else {
         setError(data.error || 'Invalid verification code');
       }
     } catch (error) {
-      console.error('Verification error:', error);
-      setError('Failed to verify code. Please try again.');
+      setError('Something went wrong. Please try again.');
     } finally {
-      setIsVerifying(false);
+      setIsLoading(false);
     }
   };
 
+  // Resend OTP
   const handleResend = async () => {
     setIsResending(true);
     setError('');
-    setOtp(['', '', '', '', '', '']);
-    setTimeLeft(300);
 
     try {
-      await onResend();
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResendCooldown(60);
+        const interval = setInterval(() => {
+          setResendCooldown((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        setError(data.error || 'Failed to resend code');
+      }
     } catch (error) {
       setError('Failed to resend code. Please try again.');
     } finally {
@@ -107,35 +137,41 @@ export default function OTPVerification({ email, onVerified, onBack, onResend }:
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-md mx-auto"
-    >
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8">
+    <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">📧</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Verify Your Email</h1>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6"
+          >
+            <Mail className="w-10 h-10 text-white" />
+          </motion.div>
+          
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Verify Your Email
+          </h1>
           <p className="text-gray-400">
             We've sent a 6-digit code to
           </p>
-          <p className="text-purple-400 font-semibold">{email}</p>
+          <p className="text-purple-400 font-semibold">
+            {email}
+          </p>
         </div>
 
         {/* OTP Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-4 text-center">
-            Enter verification code
-          </label>
-          <div className="flex justify-center gap-3">
+        <div className="mb-8">
+          <div className="flex justify-center gap-3 mb-6">
             {otp.map((digit, index) => (
               <input
                 key={index}
-                id={`otp-${index}`}
+                ref={(el) => (inputRefs.current[index] = el)}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -143,85 +179,73 @@ export default function OTPVerification({ email, onVerified, onBack, onResend }:
                 value={digit}
                 onChange={(e) => handleOtpChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="w-12 h-12 text-center text-xl font-bold bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/20 transition-all"
+                onPaste={handlePaste}
+                className="w-12 h-12 text-center text-2xl font-bold bg-white/5 border-2 border-white/10 rounded-xl text-white focus:border-purple-500 focus:outline-none transition-all"
               />
             ))}
           </div>
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-red-400 text-sm text-center">{error}</p>
-          </div>
-        )}
-
-        {/* Timer */}
-        <div className="text-center mb-6">
-          {timeLeft > 0 ? (
-            <p className="text-gray-400 text-sm">
-              Code expires in <span className="text-purple-400 font-semibold">{formatTime(timeLeft)}</span>
-            </p>
-          ) : (
-            <p className="text-red-400 text-sm">Code has expired</p>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 text-red-400 text-sm text-center justify-center mb-4"
+            >
+              <X className="w-4 h-4" />
+              {error}
+            </motion.div>
           )}
         </div>
 
         {/* Verify Button */}
         <motion.button
-          onClick={handleVerify}
-          disabled={isVerifying || otp.join('').length !== 6}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="w-full py-3 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+          onClick={handleVerify}
+          disabled={isLoading || otp.join('').length !== 6}
+          className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all mb-4"
         >
-          {isVerifying ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Verifying...
-            </>
+            </div>
           ) : (
             'Verify Email'
           )}
         </motion.button>
 
-        {/* Resend Button */}
+        {/* Resend Code */}
         <div className="text-center">
-          <p className="text-gray-400 text-sm mb-2">Didn't receive the code?</p>
-          <motion.button
+          <p className="text-gray-400 text-sm mb-2">
+            Didn't receive the code?
+          </p>
+          <button
             onClick={handleResend}
-            disabled={isResending || timeLeft > 0}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="text-purple-400 hover:text-purple-300 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+            disabled={resendCooldown > 0 || isResending}
+            className="text-purple-400 hover:text-purple-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
           >
             {isResending ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Resending...
-              </>
+              'Sending...'
+            ) : resendCooldown > 0 ? (
+              `Resend in ${resendCooldown}s`
             ) : (
-              <>
-                <RefreshCw className="w-4 h-4" />
-                Resend Code
-              </>
+              'Resend Code'
             )}
-          </motion.button>
+          </button>
         </div>
 
         {/* Back Button */}
-        <div className="mt-6 text-center">
-          <motion.button
-            onClick={onBack}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="text-gray-400 hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Signup
-          </motion.button>
-        </div>
-      </div>
-    </motion.div>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onBack}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mt-8 mx-auto"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Sign Up
+        </motion.button>
+      </motion.div>
+    </div>
   );
 }
